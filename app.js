@@ -50,7 +50,7 @@ function renderAuth() {
   const isSignup = mode === 'signup';
   const title = mode === 'reset' ? 'Choose a new password' : isSignup ? 'Create your account' : mode === 'forgot' ? 'Reset your password' : 'Welcome back';
   const intro = mode === 'reset' ? 'Choose a strong password to secure your account.' : isSignup ? 'Join the community and keep your survey progress safe.' : mode === 'forgot' ? 'We’ll email you a secure reset link if an account exists.' : 'Sign in to continue to your surveys.';
-  return `<main class="auth-page"><section class="auth-card"><a class="brand auth-brand" href="#top"><span class="brand-mark"><img src="./ngo-surveys-mark.jpg" alt="" /></span><span>NGO <b>SURVEYS</b></span></a><p class="eyebrow">COMMUNITY RESEARCH</p><h1>${title}</h1><p class="auth-intro">${intro}</p>
+  return `<main class="auth-page"><section class="auth-card"><a class="brand auth-brand" href="#top"><span class="brand-mark brand-logo"><img src="./ngo-surveys-logo.jpg" alt="NGO Surveys — Research for Impact & Development" /></span></a><p class="eyebrow">COMMUNITY RESEARCH</p><h1>${title}</h1><p class="auth-intro">${intro}</p>
     <form id="auth-form">${isSignup ? '<label>Full name<input name="name" autocomplete="name" required minlength="2" maxlength="120" /></label>' : ''}${mode !== 'reset' ? '<label>Email address<input name="email" type="email" autocomplete="email" required maxlength="255" /></label>' : ''}${['login','signup','reset'].includes(mode) ? `<label>${mode==='login'?'Password':mode==='reset'?'New password':'Password'}<input name="password" type="password" autocomplete="${mode==='login'?'current-password':'new-password'}" required minlength="10" maxlength="72" /></label>` : ''}
     ${authError ? `<p class="form-error">${authError}</p>` : ''}${authMessage ? `<p class="auth-message">${authMessage}</p>` : ''}<button class="primary-button full" ${authBusy?'disabled':''}>${authBusy?'Please wait…':mode==='reset'?'Save new password':mode==='forgot'?'Send reset link':isSignup?'Create account':'Sign in'}</button></form>
     ${!resetToken ? `<div class="auth-links">${mode==='login'?'<button data-auth-view="forgot">Forgot password?</button><span>New here? <button data-auth-view="signup">Create account</button></span>':mode==='signup'?'<span>Already have an account? <button data-auth-view="login">Sign in</button></span>':'<span>Remembered it? <button data-auth-view="login">Sign in</button></span>'}</div>`:''}
@@ -194,8 +194,7 @@ function renderNavbar() {
   return `
     <header class="topbar">
       <a class="brand" href="#top">
-        <span class="brand-mark"><img src="./ngo-surveys-mark.jpg" alt="NGO Surveys logo" /></span>
-        <span>NGO <b>SURVEYS</b></span>
+        <span class="brand-mark brand-logo"><img src="./ngo-surveys-logo.jpg" alt="NGO Surveys — Research for Impact & Development" /></span>
       </a>
       <nav class="tier-links" aria-label="Survey tiers">
         <button data-tier="free">Free</button>

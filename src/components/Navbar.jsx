@@ -2,7 +2,7 @@ import { WalletCards, Landmark } from 'lucide-react';
 
 export default function Navbar({ balance, totalEarned, onWithdraw, onTier }) {
   return <header className="topbar">
-    <a className="brand" href="#top"><span className="brand-mark"><img src="/ngo-surveys-mark.jpg" alt="NGO Surveys logo" /></span><span>NGO <b>SURVEYS</b></span></a>
+    <a className="brand" href="#top"><span className="brand-mark brand-logo"><img src="/ngo-surveys-logo.jpg" alt="NGO Surveys — Research for Impact & Development" /></span></a>
     <nav className="tier-links" aria-label="Survey tiers">
       <button onClick={() => onTier('free')}>Free</button><button onClick={() => onTier('premium')}>Premium</button><button onClick={() => onTier('premium_plus')}>Plus</button>
     </nav>
