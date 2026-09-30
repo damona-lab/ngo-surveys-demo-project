@@ -30,15 +30,17 @@ function saveState() {
   // Personal progress and wallet data are stored by the authenticated API.
 }
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
 async function api(path, options = {}) {
   let response;
   try {
-    response = await fetch(path, { ...options, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+    response = await fetch(`${API_BASE_URL}${path}`, { ...options, credentials: 'include', headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
   } catch {
-    throw new Error('Cannot reach the account server. Start the app with “npm run dev” and check that MySQL is running.');
+    throw new Error('Cannot reach the account server. Start the app with “npm run dev” and check that MongoDB is running.');
   }
   const body = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!body && !response.ok) throw new Error('The account server did not respond. Check its terminal for a MySQL or server startup error.');
+  if (!body && !response.ok) throw new Error('The account server did not respond. Check its terminal for a MongoDB or server startup error.');
   if (!response.ok) throw new Error(body?.error || 'Request failed. Please try again.');
   if (body === null) throw new Error('The account server returned an unexpected response. Check that the API server is running.');
   return body;

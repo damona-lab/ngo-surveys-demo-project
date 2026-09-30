@@ -10,20 +10,20 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: DB_HOST
+      - key: MONGODB_URI
         sync: false
-      - key: DB_PORT
-        value: "3306"
-      - key: DB_USER
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
-      - key: DB_NAME
+      - key: MONGODB_DB
         value: ngo_surveys
       - key: DB_SSL
         value: "true"
       - key: APP_URL
-        sync: false
+        value: https://ngo-surveys-demo-project.onrender.com
+      - key: FRONTEND_URL
+        value: https://ngo-surveys-demo-project.onrender.com
+      - key: CROSS_SITE_COOKIES
+        value: "false"
+      - key: VITE_API_BASE_URL
+        value: https://ngo-surveys-demo-project.onrender.com
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

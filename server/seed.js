@@ -1,13 +1,27 @@
-import pool from './db.js';
+import { connectDatabase, closeDatabase } from './db.js';
+import { Survey } from './models.js';
 import { SURVEY_SETS } from '../src/surveysData.js';
 
 try {
+  await connectDatabase();
   for (const set of SURVEY_SETS) {
-    await pool.execute(`INSERT INTO surveys (id,title,tier,unlock_fee,reward_per_question) VALUES (?,?,?,?,?)
-      ON DUPLICATE KEY UPDATE title=VALUES(title),tier=VALUES(tier),unlock_fee=VALUES(unlock_fee),reward_per_question=VALUES(reward_per_question)`,
-    [set.id,set.title,set.tier,set.unlockFee,set.rewardPerQuestion]);
-    for (const [i,q] of set.questions.entries()) await pool.execute(`INSERT INTO survey_questions(id,survey_id,sort_order,text,options) VALUES(?,?,?,?,?)
-      ON DUPLICATE KEY UPDATE text=VALUES(text),options=VALUES(options)`, [q.id,set.id,i+1,q.text,JSON.stringify(q.options)]);
+    // Survey questions are small and always read with their survey, so they are embedded.
+    await Survey.findOneAndUpdate(
+      { _id: set.id },
+      {
+        $set: {
+          title: set.title,
+          tier: set.tier,
+          unlock_fee: set.unlockFee,
+          reward_per_question: set.rewardPerQuestion,
+          questions: set.questions.map((q, index) => ({ id: q.id, sort_order: index + 1, text: q.text, options: q.options })),
+        },
+        $setOnInsert: { created_at: new Date() },
+      },
+      { upsert: true, runValidators: true },
+    );
   }
   console.log(`Seeded ${SURVEY_SETS.length} survey sets.`);
-} finally { await pool.end(); }
+} finally {
+  await closeDatabase();
+}

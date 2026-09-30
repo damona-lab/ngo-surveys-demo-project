@@ -1,21 +1,34 @@
 # NGO Surveys
 
-NGO Surveys is a browser survey dashboard with an Express API and MySQL persistence. Account passwords are stored as bcrypt hashes. Sessions use a signed, HTTP-only, same-site cookie. Survey answers, progress, wallet totals, and withdrawal requests are stored per account in MySQL.
+NGO Surveys is a browser survey dashboard with an Express API and MongoDB persistence through Mongoose. Account passwords are stored as bcrypt hashes. Sessions use a signed, HTTP-only, same-site cookie. Survey answers, progress, wallet totals, and withdrawal requests are stored per account in MongoDB.
 
 ## Local setup
 
-1. Install Node.js 20 or newer and MySQL 8.
-2. Create a MySQL database and least-privilege application user, then apply the schema:
+1. Install Node.js 20 or newer and MongoDB.
+2. Start MongoDB as a single-node replica set. A replica set is what enables multi-document transactions:
 
    ```sh
-   mysql -u root -p < server/schema.sql
+   mongod --dbpath %LOCALAPPDATA%\MongoDB\data --logpath %LOCALAPPDATA%\MongoDB\log\mongod.log ^
+          --port 27017 --bind_ip 127.0.0.1 --replSet rs0
    ```
 
-3. Copy `.env.example` to `.env` and set a long random `JWT_SECRET`, database credentials, and `APP_URL`. Keep `.env` out of source control.
-4. Install dependencies, import the survey definitions, and run the app:
+   Add `--auth --keyFile <keyfile>` once the users exist (see step 4). The keyfile is a
+   random base64 string, for example `node -e "console.log(require('node:crypto').randomBytes(384).toString('base64'))"`.
+3. Copy `.env.example` to `.env`, generate a random `MONGO_APP_PASSWORD` and `MONGO_ADMIN_PASSWORD`, build `MONGODB_URI` and `MONGO_ADMIN_URI` from them, and set a long random `JWT_SECRET`. Keep `.env` out of source control.
+4. Install dependencies and create the database users:
 
    ```sh
    npm ci
+   npm run db:setup
+   ```
+
+   `db:setup` initiates the replica set, then creates two accounts: a maintenance account
+   that can only manage users, and an application account confined to the `ngo_surveys`
+   database. It is idempotent, so re-run it to rotate a password. Restart `mongod` with
+   `--auth --keyFile` afterwards to enforce authentication.
+5. Import the survey definitions, build, and run:
+
+   ```sh
    npm run db:seed
    npm run build
    npm start
@@ -23,7 +36,36 @@ NGO Surveys is a browser survey dashboard with an Express API and MySQL persiste
 
    Visit `http://localhost:3000`.
 
-`npm run dev` starts both Vite and the Express API, and proxies `/api` requests to the API. The API still requires `.env` and a reachable MySQL database. If startup fails, read the API error in that terminal before retrying account creation.
+There is no separate schema migration step. The Mongoose schemas in `server/models.js` declare every index, the server creates them on startup, and `npm run db:seed` upserts the survey definitions by `id`.
+
+`npm run dev` starts both Vite and the Express API, and proxies `/api` requests to the API. The API still requires `.env` and a reachable MongoDB deployment. If startup fails, read the API error in that terminal before retrying account creation.
+
+You can browse the same database from VS Code with the MongoDB extension by connecting to `mongodb://127.0.0.1:27017` with the account from `.env` and `authSource=ngo_surveys`.
+
+## Data model
+
+| Collection | Purpose |
+| --- | --- |
+| `users` | Accounts, bcrypt `password_hash`, wallet `balance` / `total_earned`, `status` |
+| `surveys` | Survey definitions; `questions` are embedded as an ordered array |
+| `user_surveys` | One document per user/survey pair holding `unlocked` |
+| `user_answers` | One document per answered question with `answer_index` and `reward` |
+| `withdrawals` | Payout requests with `pending`/`processing`/`paid`/`failed` status |
+| `password_resets` | Single-use SHA-256 reset tokens that expire after one hour |
+| `refresh_tokens` | Optional hashed refresh tokens |
+
+Unique indexes on `users.email`, `user_surveys (user_id, survey_id)`, and `user_answers (user_id, survey_id, question_id)` are what prevents duplicate rows under concurrency.
+
+Multi-document transactions require a replica set or sharded cluster. The server detects this on startup and uses transactions where available; on a standalone `mongod` it falls back to atomic single-document updates (the withdrawal balance guard lives in the query filter, so the wallet cannot be overdrawn). Use a replica set or Atlas cluster in production.
+
+## Database security
+
+- The application connects with its own account, created inside the `ngo_surveys` database and granted rights on that database only. It never authenticates as a server administrator.
+- `npm run db:setup` uses a separate maintenance account with `userAdminAnyDatabase`, which can manage users but cannot read or write application data. The running application never uses it.
+- Password hashes are bcrypt. The `password_hash` field is `select: false`, so it is only read by the login query and can never leak into an API response by accident.
+- Every write goes through a Mongoose schema, so field lengths, enums, and value ranges are validated by the database layer as well as the route.
+- Unique indexes on `users.email`, `user_surveys (user_id, survey_id)`, and `user_answers (user_id, survey_id, question_id)` are what prevent duplicate rows under concurrency, including duplicate survey answers that pay a reward.
+- Reset tokens are random, stored only as SHA-256 hashes, expire after one hour, and are single-use.
 
 ## Password reset email
 
@@ -31,9 +73,11 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment
 
-Deploy as a Node web service, not as a static-only site. `deployments/render.yaml` builds the Vite assets and starts the Express server. Supply a reachable managed MySQL 8 database and the database, SMTP, `JWT_SECRET`, and `APP_URL` environment variables in the hosting provider. Enable TLS for the database connection (`DB_SSL=true`) and use HTTPS so secure session cookies are enabled. Run `npm run db:seed` after applying `server/schema.sql` to the production database.
+Deploy as a Node web service, not as a static-only site. `deployments/render.yaml` builds the Vite assets and starts the Express server. Supply a reachable managed MongoDB deployment and the `MONGODB_URI`, `MONGODB_DB`, SMTP, `JWT_SECRET`, and `APP_URL` environment variables in the hosting provider. Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. Run `npm run db:seed` once against the production database.
 
-The previous Netlify static hosting configuration cannot provide this API or safely connect to MySQL. Use a Node server deployment for the authenticated app.
+If the frontend is hosted separately, set `VITE_API_BASE_URL` in the frontend build environment to the backend's public HTTPS URL. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
+
+The previous Netlify static hosting configuration cannot provide this API or safely connect to a database. Use a Node server deployment for the authenticated app.
 
 ## Current payment limitation
 
