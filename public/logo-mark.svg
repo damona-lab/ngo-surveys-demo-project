@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="NGO Surveys">
+  <defs>
+    <linearGradient id="ngoRing" x1="12" y1="12" x2="84" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6ee7c9"/>
+      <stop offset="1" stop-color="#10a38e"/>
+    </linearGradient>
+    <linearGradient id="ngoBars" x1="30" y1="72" x2="66" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e9d86"/>
+      <stop offset="1" stop-color="#74e8ca"/>
+    </linearGradient>
+  </defs>
+  <circle cx="48" cy="48" r="41" fill="none" stroke="url(#ngoRing)" stroke-width="6.5"/>
+  <g fill="url(#ngoBars)">
+    <rect x="31" y="56" width="8.5" height="15" rx="3"/>
+    <rect x="43.75" y="46" width="8.5" height="25" rx="3"/>
+    <rect x="56.5" y="34" width="8.5" height="37" rx="3"/>
+  </g>
+  <path d="M56 33.5 L65.5 33.5 L60.75 21 Z" fill="#f5aa1a"/>
+</svg>

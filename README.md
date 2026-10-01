@@ -38,7 +38,14 @@ NGO Surveys is a browser survey dashboard with an Express API and MongoDB persis
 
 There is no separate schema migration step. The Mongoose schemas in `server/models.js` declare every index, the server creates them on startup, and `npm run db:seed` upserts the survey definitions by `id`.
 
-`npm run dev` starts both Vite and the Express API, and proxies `/api` requests to the API. The API still requires `.env` and a reachable MongoDB deployment. If startup fails, read the API error in that terminal before retrying account creation.
+After a reboot, the local MongoDB is usually stopped, and the app will fail to start with `ECONNREFUSED 127.0.0.1:27017`. Start the database first, then the app:
+
+```sh
+npm run db:start   # starts the local single-node replica set; safe to re-run
+npm start          # or: npm run dev
+```
+
+`npm run db:start` uses the portable install under `%LOCALAPPDATA%\MongoDB`, so it assumes that layout. `npm run dev` starts both Vite and the Express API, and proxies `/api` requests to the API. The API still requires `.env` and a reachable MongoDB deployment. If startup fails, read the API error in that terminal before retrying account creation.
 
 You can browse the same database from VS Code with the MongoDB extension by connecting to `mongodb://127.0.0.1:27017` with the account from `.env` and `authSource=ngo_surveys`.
 

@@ -89,17 +89,44 @@ app.post('/api/auth/logout', (_req, res) => { res.clearCookie(cookieName, { ...c
 app.get('/api/auth/me', requireUser, (req, res) => res.json({ user: publicUser(req.user) }));
 app.get('/api/health', async (_req, res) => { try { await ping(); res.json({ ok: true }); } catch { res.status(503).json({ ok: false }); } });
 
+// Reused SMTP transport for password reset email, created on first use.
+let mailTransportInstance = null;
+function mailTransport() {
+  if (!mailTransportInstance) {
+    mailTransportInstance = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+  }
+  return mailTransportInstance;
+}
+
 app.post('/api/auth/reset-request', async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const account = await User.findOne({ email, status: 'active' }).select('email').lean();
     if (account && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
       const raw = newResetToken(); const digest = createHash('sha256').update(raw).digest('hex');
-      await PasswordReset.updateMany({ user_id: account._id, used: false }, { $set: { used: true } });
+      // Previously issued links are left valid until they are used (or expire), so a user who
+      // clicks an earlier reset email still succeeds instead of hitting "invalid or expired".
+      // Every token stays single-use, and a successful reset invalidates all of them.
       await PasswordReset.create({ user_id: account._id, token: digest, used: false, expires_at: new Date(Date.now() + 60 * 60 * 1000) });
-      const transport = nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === 'true', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
       const link = `${process.env.APP_URL}/?reset=${encodeURIComponent(raw)}`;
-      await transport.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: account.email, subject: 'Reset your NGO Surveys password', text: `Use this link within one hour to reset your password: ${link}` });
+      // Delivery problems are logged but never surfaced, so the response is identical
+      // whether or not the address exists and the endpoint cannot enumerate accounts.
+      try {
+        await mailTransport().sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to: account.email,
+          subject: 'Reset your NGO Surveys password',
+          text: `Use this link within one hour to reset your NGO Surveys password: ${link}\n\nIf you did not request this, you can ignore this email.`,
+          html: `<p>Use this link within one hour to reset your <strong>NGO Surveys</strong> password:</p><p><a href="${link}">Reset my password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+        });
+      } catch (mailError) {
+        console.error('Password reset email failed:', mailError.message);
+      }
     }
     res.json({ message: 'If an account matches that email and email delivery is configured, a reset link will arrive shortly.' });
   } catch (err) { next(err); }
@@ -118,7 +145,7 @@ app.post('/api/auth/reset', async (req, res, next) => {
       await inSession(RefreshToken.deleteMany({ user_id: reset.user_id }), session).exec();
       return 'ok';
     });
-    if (outcome === 'expired') return res.status(400).json({ error: 'This reset link is invalid or expired.' });
+    if (outcome === 'expired') return res.status(400).json({ error: 'This reset link is invalid, already used, or has expired. Please request a new one.' });
     res.json({ message: 'Password updated. You can now sign in.' });
   } catch (err) { next(err); }
 });
@@ -220,6 +247,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist
 app.use(express.static(root));
 app.get('/{*path}', (_req, res) => res.sendFile(path.join(root, 'index.html')));
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: 'A server error occurred.' }); });
+
+// Password reset email is only useful if it can actually reach the recipient, so surface
+// any configuration that limits delivery at startup rather than failing silently later.
+if (!process.env.SMTP_HOST) {
+  console.warn('Email: SMTP is not configured, so password reset links cannot be sent.');
+} else if (process.env.SMTP_FROM?.includes('onboarding@resend.dev')) {
+  console.warn('Email: SMTP_FROM is onboarding@resend.dev, which Resend only delivers to the Resend account owner address. Add and verify a domain at resend.com/domains, then set SMTP_FROM to an address on that domain to email other users.');
+}
 
 await connectDatabase();
 await ping();

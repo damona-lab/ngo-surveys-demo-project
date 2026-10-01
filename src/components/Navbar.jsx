@@ -4,7 +4,8 @@ export default function Navbar({ balance, totalEarned, userName, onWithdraw, onA
   return (
     <header className="topbar">
       <a className="brand" href="#top">
-        <span className="brand-mark brand-logo"><img src="/ngo-surveys-logo.jpg" alt="NGO Surveys — Research for Impact & Development" /></span>
+        <span className="brand-mark brand-logo"><img src="/logo-mark.svg" alt="" aria-hidden="true" /></span>
+        <span className="brand-wordmark">NGO <b>SURVEYS</b></span>
       </a>
       <nav className="tier-links" aria-label="Survey tiers">
         <button onClick={() => document.getElementById('free')?.scrollIntoView({ behavior: 'smooth' })}>Free</button>
