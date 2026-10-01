@@ -2,6 +2,7 @@ services:
   - type: web
     name: ngo-surveys
     runtime: node
+    nodeVersion: "22"
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -16,18 +17,24 @@ services:
         value: ngo_surveys
       - key: DB_SSL
         value: "true"
+      # The service's own public URL, e.g. https://ngo-surveys.onrender.com. Render asks
+      # for these on the blueprint screen; both must match the deployed hostname exactly.
       - key: APP_URL
-        value: https://ngo-surveys-demo-project.onrender.com
+        sync: false
       - key: FRONTEND_URL
-        value: https://ngo-surveys-demo-project.onrender.com
+        sync: false
       - key: CROSS_SITE_COOKIES
         value: "false"
-      - key: VITE_API_BASE_URL
-        value: https://ngo-surveys-demo-project.onrender.com
+      # VITE_API_BASE_URL is intentionally absent: the Express server also serves the built
+      # frontend, so the browser calls /api on the same origin. Add this key only when the
+      # frontend is hosted somewhere else, with the backend's public HTTPS URL as its value.
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
         value: "587"
+      # Port 587 upgrades a plain connection with STARTTLS, so secure must stay false.
+      - key: SMTP_SECURE
+        value: "false"
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS

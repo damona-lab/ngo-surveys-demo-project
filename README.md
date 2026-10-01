@@ -80,7 +80,9 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment
 
-Deploy as a Node web service, not as a static-only site. `deployments/render.yaml` builds the Vite assets and starts the Express server. Supply a reachable managed MongoDB deployment and the `MONGODB_URI`, `MONGODB_DB`, SMTP, `JWT_SECRET`, and `APP_URL` environment variables in the hosting provider. Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. Run `npm run db:seed` once against the production database.
+Deploy as a Node web service, not as a static-only site. `render.yaml` in the repository root is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository, which reads the file automatically. Render then asks for the values marked `sync: false`, namely `MONGODB_URI`, the service's own public URL for `APP_URL` and `FRONTEND_URL`, and the SMTP credentials. The blueprint builds the Vite assets and starts the Express server, so the API and the built frontend share one origin and `VITE_API_BASE_URL` stays unset. Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. The server trusts the proxy in front of it so rate limiting counts real visitor addresses.
+
+Run `npm run db:seed` once against the production database from a machine that can reach it, with that database's `MONGODB_URI` in `.env`.
 
 If the frontend is hosted separately, set `VITE_API_BASE_URL` in the frontend build environment to the backend's public HTTPS URL. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
 
