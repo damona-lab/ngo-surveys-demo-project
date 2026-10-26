@@ -20,7 +20,7 @@ app.disable('x-powered-by');
 // Hosts such as Render forward the request through a proxy, so req.ip is the proxy's address
 // until that hop is trusted. Without this, every visitor shares one rate limit bucket.
 app.set('trust proxy', 1);
-app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'", 'https://unpkg.com'], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:'], connectSrc: ["'self'"], objectSrc: ["'none'"], upgradeInsecureRequests: isProd ? [] : null } } }));
+app.use(helmet({ frameguard: isProd ? { action: 'sameorigin' } : false, contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'", 'https://unpkg.com'], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: isProd ? ["'self'"] : ['*'], upgradeInsecureRequests: isProd ? [] : null } } }));
 const frontendOrigins = (process.env.FRONTEND_URL || '').split(',').map(origin => origin.trim().replace(/\/$/, '')).filter(Boolean);
 app.use((req, res, next) => {
   const origin = req.get('origin');

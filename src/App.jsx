@@ -7,6 +7,7 @@ import SurveyCard from './components/SurveyCard';
 import PaymentModal from './components/PaymentModal';
 import SurveyRunner from './components/SurveyRunner';
 import WithdrawModal from './components/WithdrawModal';
+import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
 
 export default function App() {
@@ -109,7 +110,7 @@ export default function App() {
       {paymentSurvey && <PaymentModal survey={paymentSurvey} onClose={() => setPaymentSurvey(null)} onUnlock={unlockSurvey} />}
       {activeSurvey && <SurveyRunner survey={activeSurvey} completedIds={state.surveys[activeSurvey.id]?.completedQuestions || []} onAnswer={handleAnswer} onClose={() => setActiveSurvey(null)} />}
        {withdrawOpen && <WithdrawModal balance={state.balance} onWithdraw={(amount, name, phone) => { withdraw(amount, name, phone); setWithdrawOpen(false); }} onClose={() => setWithdrawOpen(false)} />}
-       {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+       {profileOpen && <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />}
     </div>
   );
 }
