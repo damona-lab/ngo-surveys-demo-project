@@ -86,11 +86,20 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment
 
-Deploy as a Node web service, not as a static-only site. `render.yaml` in the repository root is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository, which reads the file automatically. Render then asks for the values marked `sync: false`, namely `MONGODB_URI`, the service's own public URL for `APP_URL` and `FRONTEND_URL`, and the SMTP credentials. The blueprint installs dependencies, builds the frontend, and starts the Express server, which serves the built frontend from `dist/` and the API from one origin, so `VITE_API_BASE_URL` stays unset. Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. The server trusts the proxy in front of it so rate limiting counts real visitor addresses.
+**Two-host setup (current):** the frontend is hosted on **Netlify** and the backend (API + MongoDB) on **Render** at `https://ngo-surveys-db.onrender.com`.
+
+- `render.yaml` (repo root) is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository. It reads the file automatically. Render then asks for the values marked `sync: false` (`MONGODB_URI`, `APP_URL`, `FRONTEND_URL`, SMTP credentials). The blueprint installs dependencies, builds the frontend, and starts the Express server.
+- `netlify.toml` (repo root) configures the Netlify site: it runs `npm ci && npm run build` with `VITE_API_BASE_URL=https://ngo-surveys-db.onrender.com` baked in, then publishes `dist/`.
+
+Because the frontend and backend are on different sites, the session cookie must be `SameSite=None; Secure`, which is what `CROSS_SITE_COOKIES=true` enables on the backend. The backend only echoes CORS headers for origins listed in `FRONTEND_URL`, so set it to your Netlify URL (comma-separated for multiple frontends).
+
+`npm run build` compiles the React/JSX sources under `src/` into the browser bundle in `dist/` (`dist/index.html`, `dist/assets/index.js`, `dist/assets/index.css`) using esbuild — a compiler/bundler only, with no dev server and no Vite. When `VITE_API_BASE_URL` is set (Netlify build), the bundle calls `/api` on that origin; when it is empty (same-origin Render), the bundle calls `/api` on its own origin.
+
+To host the frontend separately from the API, set `VITE_API_BASE_URL` in the build environment (it is read by `scripts/build.mjs`) to the backend's public HTTPS URL. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
 
 Run `npm run db:seed` once against the production database from a machine that can reach it, with that database's `MONGODB_URI` in `.env`.
 
-If the frontend is hosted separately from the API, set `VITE_API_BASE_URL` in the build environment (it is read by `scripts/build.mjs`) to the backend's public HTTPS URL. In the default single-origin deployment this Express server serves the frontend from `dist/`, so the bundle calls `/api` on its own origin and no base URL is needed. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
+Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. The server trusts the proxy in front of it so rate limiting counts real visitor addresses.
 
 The previous Netlify static hosting configuration cannot provide this API or safely connect to a database. Use a Node server deployment for the authenticated app.
 

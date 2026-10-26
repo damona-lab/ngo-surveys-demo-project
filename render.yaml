@@ -36,6 +36,11 @@ services:
         value: "true"
       # Render serves the prebuilt frontend from dist/ and the API from the same origin, so
       # the browser calls /api directly and no VITE_API_BASE_URL is needed here.
+      # The frontend is hosted separately on Netlify, so VITE_API_BASE_URL is set to this
+      # service's public URL and the bundle calls /api on this origin.
+      - key: VITE_API_BASE_URL
+        sync: false
+        value: https://ngo-surveys-db.onrender.com
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
