@@ -30,12 +30,14 @@ export default function PaymentModal({ survey, onClose, onUnlock }) {
         <div className="modal-icon teal"><ShieldCheck /></div>
         <span className="eyebrow">SECURE PAYMENT</span>
         <h2>Unlock {survey.title}</h2>
-        <p className="modal-copy">Complete the payment below to unlock this survey and start earning rewards.</p>
+        <p className="modal-copy">Complete the M-Pesa payment below to unlock this survey and start earning rewards.</p>
         <div className="payment-instructions">
           <ClipboardCheck size={20} />
           <div>
             <strong>Payment reference</strong>
-            <p>Pay to Till 8934120 · "NGO Surveys Services"</p>
+            <p>Go to M-Pesa → Lipa Na M-Pesa → Paybill</p>
+            <p>Business number <strong>247247</strong> · Account number (Payment reference) <strong>1500185563003</strong></p>
+            <p>Enter amount <strong>Ksh {survey.unlockFee}</strong>, then confirm PIN</p>
             <code>QK12345678 Confirmed. Ksh {survey.unlockFee}.00 PAID</code>
           </div>
         </div>
