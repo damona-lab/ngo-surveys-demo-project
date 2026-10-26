@@ -18,7 +18,7 @@ const money = (fallback = 0) => ({
 const userSchema = new Schema({
   name: { type: String, required: true, trim: true, minlength: 2, maxlength: 120 },
   email: { type: String, required: true, trim: true, lowercase: true, maxlength: 255, match: EMAIL_PATTERN, index: { unique: true, name: 'users_email_unique' } },
-  phone: { type: String, default: null, trim: true, maxlength: 20, match: /^\d{7,15}$/ },
+  phone: { type: String, required: true, trim: true, match: PHONE_PATTERN },
   // bcrypt hashes never leave the database unless a query asks for them explicitly.
   password_hash: { type: String, required: true, select: false },
   balance: money(),

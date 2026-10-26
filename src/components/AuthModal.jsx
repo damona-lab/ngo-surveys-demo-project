@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthModal({ open, onClose }) {
   const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { signup, login, setError: setAuthError } = useAuth();
@@ -19,7 +19,7 @@ export default function AuthModal({ open, onClose }) {
     setLoading(true);
     try {
       if (mode === 'login') await login(form.email, form.password);
-      else await signup(form.name, form.email, form.password);
+      else await signup(form.name, form.email, form.phone, form.password);
       onClose();
       setForm({ name: '', email: '', password: '' });
     } catch (err) {
@@ -42,6 +42,9 @@ export default function AuthModal({ open, onClose }) {
         <form onSubmit={submit}>
           {mode === 'signup' && (
             <label>Full name<input name="name" value={form.name} onChange={update} placeholder="e.g. Amina Wanjiku" minLength="2" maxLength="120" required /></label>
+          )}
+          {mode === 'signup' && (
+            <label>Phone number<input name="phone" value={form.phone} onChange={update} placeholder="07XXXXXXXX" pattern="^(?:07|01)\d{8}$" required /></label>
           )}
           <label>Email<input name="email" value={form.email} onChange={update} type="email" placeholder="you@example.com" required /></label>
           <label>Password<input name="password" value={form.password} onChange={update} type="password" placeholder={mode === 'signup' ? 'At least 10 characters' : 'Your password'} minLength="10" required /></label>

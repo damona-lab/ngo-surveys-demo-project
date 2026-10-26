@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import API from './api';
+import API from '../api';
 
 const AuthContext = createContext(null);
 
@@ -31,9 +31,9 @@ export function AuthProvider({ children }) {
 
   useEffect(() => { load(); }, []);
 
-  async function signup(name, email, password) {
+   async function signup(name, email, phone, password) {
     setError('');
-    const data = await API.signup(name, email, password);
+    const data = await API.signup(name, email, phone, password);
     setUser(data.user);
     const s = await API.state();
     setState(s.state);
@@ -47,6 +47,12 @@ export function AuthProvider({ children }) {
     setState(s.state);
   }
 
+   async function updateProfile(data) {
+    setError('');
+    const res = await API.profile(data);
+    setUser(res.user);
+    return res.user;
+  }
   async function logout() {
     await API.logout();
     setUser(null);
@@ -68,7 +74,7 @@ export function AuthProvider({ children }) {
     setState(s => ({ ...s, balance: +(s.balance - amount).toFixed(2), withdrawals: [...s.withdrawals, { amount, at: new Date().toISOString() }] }));
   }
 
-  const value = useMemo(() => ({ user, state, loading, error, signup, login, logout, answer, unlock, withdraw, setError }), [user, state, loading, error]);
+  const value = useMemo(() => ({ user, state, loading, error, signup, login, logout, updateProfile, answer, unlock, withdraw, setError }), [user, state, loading, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

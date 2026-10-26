@@ -60,15 +60,16 @@ async function requireUser(req, res, next) {
 }
 
 function setSession(res, user) { res.cookie(cookieName, signToken(user), cookieOptions); }
-function publicUser(user) { return { id: String(user._id), name: user.name, email: user.email, balance: Number(user.balance), totalEarned: Number(user.total_earned) }; }
+function publicUser(user) { return { id: String(user._id), name: user.name, email: user.email, phone: user.phone, balance: Number(user.balance), totalEarned: Number(user.total_earned) }; }
 
 app.post('/api/auth/signup', async (req, res, next) => {
   try {
     const name = String(req.body.name || '').trim();
     const email = String(req.body.email || '').trim().toLowerCase();
+    const phone = String(req.body.phone || '').replace(/\s/g, '');
     const password = String(req.body.password || '');
-    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || password.length < 10 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name and email, and a password of 10–72 characters.' });
-    const user = await User.create({ name, email, password_hash: await hashPassword(password), balance: 0, total_earned: 0, status: 'active' });
+    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 10 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 10–72 characters.' });
+    const user = await User.create({ name, email, phone, password_hash: await hashPassword(password), balance: 0, total_earned: 0, status: 'active' });
     setSession(res, user);
     res.status(201).json({ user: publicUser(user) });
   } catch (err) {
@@ -90,6 +91,21 @@ app.post('/api/auth/login', async (req, res, next) => {
 
 app.post('/api/auth/logout', (_req, res) => { res.clearCookie(cookieName, { ...cookieOptions, maxAge: undefined }); res.status(204).end(); });
 app.get('/api/auth/me', requireUser, (req, res) => res.json({ user: publicUser(req.user) }));
+app.put('/api/auth/profile', requireUser, async (req, res, next) => {
+  try {
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const phone = String(req.body.phone || '').replace(/\s/g, '');
+    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone)) return res.status(400).json({ error: 'Enter valid name, email, and phone.' });
+    const updated = await User.findOneAndUpdate({ _id: req.user._id, status: 'active' }, { $set: { name, email, phone } }, { new: true, runValidators: true }).select('name email balance total_earned').lean();
+    if (!updated) return res.status(404).json({ error: 'User not found.' });
+    res.json({ user: publicUser(updated) });
+  } catch (err) {
+    if (isDuplicateKeyError(err)) return res.status(409).json({ error: 'An account with this email already exists.' });
+    if (isValidationError(err)) return res.status(400).json({ error: 'Enter valid name, email, and phone.' });
+    next(err);
+  }
+});
 app.get('/api/health', async (_req, res) => { try { await ping(); res.json({ ok: true }); } catch { res.status(503).json({ ok: false }); } });
 
 // Reused SMTP transport for password reset email, created on first use.

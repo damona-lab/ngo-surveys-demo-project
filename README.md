@@ -26,7 +26,7 @@ NGO Surveys is a browser survey dashboard with an Express API and MongoDB persis
    that can only manage users, and an application account confined to the `ngo_surveys`
    database. It is idempotent, so re-run it to rotate a password. Restart `mongod` with
    `--auth --keyFile` afterwards to enforce authentication.
-5. Import the survey definitions, build, and run:
+5. Import the survey definitions, build the frontend, and run:
 
    ```sh
    npm run db:seed
@@ -35,6 +35,12 @@ NGO Surveys is a browser survey dashboard with an Express API and MongoDB persis
    ```
 
    Visit `http://localhost:3000`.
+
+`npm run build` compiles the React/JSX sources under `src/` into the browser bundle in
+`dist/` (`dist/index.html`, `dist/assets/index.js`, `dist/assets/index.css`) using
+esbuild — a compiler/bundler only, with no dev server and no Vite. `express.static`
+serves that folder, and any other path falls back to `dist/index.html`. Re-run
+`npm run build` after editing anything in `src/`.
 
 There is no separate schema migration step. The Mongoose schemas in `server/models.js` declare every index, the server creates them on startup, and `npm run db:seed` upserts the survey definitions by `id`.
 
@@ -45,7 +51,7 @@ npm run db:start   # starts the local single-node replica set; safe to re-run
 npm start          # or: npm run dev
 ```
 
-`npm run db:start` uses the portable install under `%LOCALAPPDATA%\MongoDB`, so it assumes that layout. `npm run dev` starts both Vite and the Express API, and proxies `/api` requests to the API. The API still requires `.env` and a reachable MongoDB deployment. If startup fails, read the API error in that terminal before retrying account creation.
+`npm run db:start` uses the portable install under `%LOCALAPPDATA%\MongoDB`, so it assumes that layout. `npm run dev` and `npm start` both run the same plain Node/Express server (`server/index.js`), which serves the built frontend from `dist/` together with the API on `http://localhost:3000`; there is no separate dev server or `/api` proxy. Run `npm run build` after changing anything under `src/`. The API still requires `.env` and a reachable MongoDB deployment. If startup fails, read the API error in that terminal before retrying account creation.
 
 You can browse the same database from VS Code with the MongoDB extension by connecting to `mongodb://127.0.0.1:27017` with the account from `.env` and `authSource=ngo_surveys`.
 
@@ -80,11 +86,11 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment
 
-Deploy as a Node web service, not as a static-only site. `render.yaml` in the repository root is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository, which reads the file automatically. Render then asks for the values marked `sync: false`, namely `MONGODB_URI`, the service's own public URL for `APP_URL` and `FRONTEND_URL`, and the SMTP credentials. The blueprint builds the Vite assets and starts the Express server, so the API and the built frontend share one origin and `VITE_API_BASE_URL` stays unset. Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. The server trusts the proxy in front of it so rate limiting counts real visitor addresses.
+Deploy as a Node web service, not as a static-only site. `render.yaml` in the repository root is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository, which reads the file automatically. Render then asks for the values marked `sync: false`, namely `MONGODB_URI`, the service's own public URL for `APP_URL` and `FRONTEND_URL`, and the SMTP credentials. The blueprint installs dependencies, builds the frontend, and starts the Express server, which serves the built frontend from `dist/` and the API from one origin, so `VITE_API_BASE_URL` stays unset. Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. The server trusts the proxy in front of it so rate limiting counts real visitor addresses.
 
 Run `npm run db:seed` once against the production database from a machine that can reach it, with that database's `MONGODB_URI` in `.env`.
 
-If the frontend is hosted separately, set `VITE_API_BASE_URL` in the frontend build environment to the backend's public HTTPS URL. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
+If the frontend is hosted separately from the API, set `VITE_API_BASE_URL` in the build environment (it is read by `scripts/build.mjs`) to the backend's public HTTPS URL. In the default single-origin deployment this Express server serves the frontend from `dist/`, so the bundle calls `/api` on its own origin and no base URL is needed. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
 
 The previous Netlify static hosting configuration cannot provide this API or safely connect to a database. Use a Node server deployment for the authenticated app.
 

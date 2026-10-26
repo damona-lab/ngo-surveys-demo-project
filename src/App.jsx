@@ -7,14 +7,15 @@ import SurveyCard from './components/SurveyCard';
 import PaymentModal from './components/PaymentModal';
 import SurveyRunner from './components/SurveyRunner';
 import WithdrawModal from './components/WithdrawModal';
-import AuthModal from './components/AuthModal';
+import ProfileModal from './components/ProfileModal';
 
 export default function App() {
-  const { user, state, loading, answer, unlock, withdraw } = useAuth();
+  const { user, state, loading, answer, unlock, withdraw, logout } = useAuth();
   const [activeSurvey, setActiveSurvey] = useState(null);
   const [paymentSurvey, setPaymentSurvey] = useState(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [toast, setToast] = useState('');
 
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2600); return () => clearTimeout(t); }, [toast]);
@@ -42,7 +43,7 @@ export default function App() {
 
   if (loading) return <div className="loading-screen"><div className="spinner" /> Loading…</div>;
 
-  if (!user) return <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />;
+  if (!user) return <AuthModal open onClose={() => {}} />;
 
   return (
     <div id="top" className="app-shell">
@@ -50,8 +51,10 @@ export default function App() {
         balance={state.balance}
         totalEarned={state.totalEarned}
         userName={user.name}
+        userEmail={user.email}
         onWithdraw={() => setWithdrawOpen(true)}
-        onAuth={() => setAuthOpen(true)}
+        onLogout={() => logout()}
+        onProfile={() => setProfileOpen(true)}
         onTier={tier => document.getElementById(tier)?.scrollIntoView({ behavior: 'smooth' })}
       />
       <main>
@@ -105,7 +108,8 @@ export default function App() {
       {toast && <div className="toast"><CircleCheck size={18} />{toast}</div>}
       {paymentSurvey && <PaymentModal survey={paymentSurvey} onClose={() => setPaymentSurvey(null)} onUnlock={unlockSurvey} />}
       {activeSurvey && <SurveyRunner survey={activeSurvey} completedIds={state.surveys[activeSurvey.id]?.completedQuestions || []} onAnswer={handleAnswer} onClose={() => setActiveSurvey(null)} />}
-      {withdrawOpen && <WithdrawModal balance={state.balance} onWithdraw={(amount, name, phone) => { withdraw(amount, name, phone); setWithdrawOpen(false); }} onClose={() => setWithdrawOpen(false)} />}
+       {withdrawOpen && <WithdrawModal balance={state.balance} onWithdraw={(amount, name, phone) => { withdraw(amount, name, phone); setWithdrawOpen(false); }} onClose={() => setWithdrawOpen(false)} />}
+       {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
     </div>
   );
 }

@@ -1,0 +1,5 @@
+
+> ngo-surveys-demo@1.0.0 start
+> node --env-file-if-exists=.env server/index.js
+
+NGO Surveys listening on port 3000

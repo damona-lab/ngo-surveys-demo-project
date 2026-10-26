@@ -1,0 +1,1 @@
+Email: SMTP_FROM is onboarding@resend.dev, which Resend only delivers to the Resend account owner address. Add and verify a domain at resend.com/domains, then set SMTP_FROM to an address on that domain to email other users.

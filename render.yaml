@@ -3,6 +3,8 @@ services:
     name: ngo-surveys
     runtime: node
     nodeVersion: "22"
+    # Installs dependencies, then compiles src/ into dist/ via the Vite-free esbuild
+    # build (scripts/build.mjs). Express serves dist/ and the API from one origin.
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -17,17 +19,23 @@ services:
         value: ngo_surveys
       - key: DB_SSL
         value: "true"
-      # The service's own public URL, e.g. https://ngo-surveys.onrender.com. Render asks
-      # for these on the blueprint screen; both must match the deployed hostname exactly.
+      # APP_URL is the public URL of the FRONTEND, because reset links are built as
+      # `${APP_URL}/?reset=<token>` and the reset form lives in the frontend.
+      # Example: https://your-site.netlify.app
       - key: APP_URL
         sync: false
+      # FRONTEND_URL is the exact frontend origin (scheme + hostname, no path, no trailing
+      # slash). The API only echoes CORS headers for origins listed here, and it accepts a
+      # comma-separated list, e.g. https://your-site.netlify.app,http://localhost:5173
       - key: FRONTEND_URL
         sync: false
+      # The Netlify frontend and this service are different sites, so the session cookie must
+      # be SameSite=None; Secure, which is what CROSS_SITE_COOKIES=true enables. Set this back
+      # to "false" only when the frontend is served from this same origin.
       - key: CROSS_SITE_COOKIES
-        value: "false"
-      # VITE_API_BASE_URL is intentionally absent: the Express server also serves the built
-      # frontend, so the browser calls /api on the same origin. Add this key only when the
-      # frontend is hosted somewhere else, with the backend's public HTTPS URL as its value.
+        value: "true"
+      # Render serves the prebuilt frontend from dist/ and the API from the same origin, so
+      # the browser calls /api directly and no VITE_API_BASE_URL is needed here.
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
