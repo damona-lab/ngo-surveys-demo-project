@@ -22,7 +22,7 @@ export async function connectDatabase() {
     maxPoolSize: 10,
     minPoolSize: 1,
     retryWrites: true,
-    tls: process.env.DB_SSL === 'true' ? {} : undefined,
+    tls: process.env.DB_SSL === 'true' ? true : undefined,
   });
   // Schema definitions carry the indexes, so a fresh database needs no migration step.
   for (const model of MODELS) await model.createIndexes();
