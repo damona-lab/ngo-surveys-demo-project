@@ -86,14 +86,32 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment
 
-**Two-host setup (current):** the frontend is hosted on **Netlify** and the backend (API + MongoDB) on **Render** at `https://ngo-surveys.onrender.com`.
+**Two-host setup:** the frontend is hosted separately (e.g. Netlify) and the backend
+(API + MongoDB) is hosted on **Render**.
 
-- `render.yaml` (repo root) is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository. It reads the file automatically. Render then asks for the values marked `sync: false` (`MONGODB_URI`, `APP_URL`, `FRONTEND_URL`, SMTP credentials). The blueprint installs dependencies, builds the frontend, and starts the Express server.
-- `netlify.toml` (repo root) configures the Netlify site: it runs `npm ci && npm run build` with `VITE_API_BASE_URL=https://ngo-surveys.onrender.com` baked in, then publishes `dist/`.
+- `render.yaml` (repo root) is a Render Blueprint: create the service with Render's
+  **New > Blueprint** page and point it at this repository. It reads the file
+  automatically. Render then asks for the values marked `sync: false`
+  (`MONGODB_URI`, `APP_URL`, `FRONTEND_URL`, `VITE_API_BASE_URL`, SMTP credentials).
+  The blueprint installs dependencies, builds the frontend, and starts the Express
+  server.
+- `netlify.toml` (repo root) configures the Netlify site: it runs
+  `npm ci && npm run build` with `VITE_API_BASE_URL` baked in, then publishes `dist/`.
+  Set `VITE_API_BASE_URL` to the backend's public HTTPS URL before deploying.
 
-Because the frontend and backend are on different sites, the session cookie must be `SameSite=None; Secure`, which is what `CROSS_SITE_COOKIES=true` enables on the backend. The backend only echoes CORS headers for origins listed in `FRONTEND_URL`, so set it to your Netlify URL (comma-separated for multiple frontends).
+Because the frontend and backend are on different sites, the session cookie must be
+`SameSite=None; Secure`, which is what `CROSS_SITE_COOKIES=true` enables on the
+backend. The backend only echoes CORS headers for origins listed in `FRONTEND_URL`,
+so set it to your frontend's exact origin (scheme and hostname, without a path). Set
+`APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true`
+only when the frontend and backend are on different sites; same-site subdomains can
+keep it `false`.
 
-`npm run build` compiles the React/JSX sources under `src/` into the browser bundle in `dist/` (`dist/index.html`, `dist/assets/index.js`, `dist/assets/index.css`) using esbuild — a compiler/bundler only, with no dev server and no Vite. When `VITE_API_BASE_URL` is set (Netlify build), the bundle calls `/api` on that origin; when it is empty (same-origin Render), the bundle calls `/api` on its own origin.
+`npm run build` compiles the React/JSX sources under `src/` into the browser bundle in
+`dist/` (`dist/index.html`, `dist/assets/index.js`, `dist/assets/index.css`) using
+esbuild — a compiler/bundler only, with no dev server and no Vite. When
+`VITE_API_BASE_URL` is set (Netlify build), the bundle calls `/api` on that origin;
+when it is empty (same-origin Render), the bundle calls `/api` on its own origin.
 
 To host the frontend separately from the API, set `VITE_API_BASE_URL` in the build environment (it is read by `scripts/build.mjs`) to the backend's public HTTPS URL. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
 
