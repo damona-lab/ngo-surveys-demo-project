@@ -264,7 +264,7 @@ app.post('/api/withdrawals', requireUser, async (req, res, next) => {
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 app.use(express.static(root));
-app.get('*', (_req, res) => res.sendFile(path.join(root, 'index.html')));
+app.get('/{*wildcard}', (_req, res) => res.sendFile(path.join(root, 'index.html')));
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: 'A server error occurred.' }); });
 
 // Password reset email is only useful if it can actually reach the recipient, so surface
