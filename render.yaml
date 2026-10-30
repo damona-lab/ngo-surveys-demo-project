@@ -40,7 +40,7 @@ services:
       # service's public URL and the bundle calls /api on this origin.
       - key: VITE_API_BASE_URL
         sync: false
-        value: https://ngo-surveys-db.onrender.com
+        value: https://ngo-surveys.onrender.com
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

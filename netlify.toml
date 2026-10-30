@@ -1,6 +1,6 @@
 # Netlify build config for the NGO Surveys frontend.
 # The backend (API + MongoDB) is hosted separately on Render at
-# https://ngo-surveys-db.onrender.com, so the bundle is built pointing at it.
+# https://ngo-surveys.onrender.com, so the bundle is built pointing at it.
 
 [build]
   # Install deps, then compile src/ -> dist/ with the backend URL baked in.
@@ -9,7 +9,7 @@
 
 [build.environment]
   # URL the frontend bundle calls the API from. Read by scripts/build.mjs.
-  VITE_API_BASE_URL = "https://ngo-surveys-db.onrender.com"
+  VITE_API_BASE_URL = "https://ngo-surveys.onrender.com"
 
 # Serve the built SPA from dist/. The Express server already emits dist/index.html,
 # so no redirect rules are needed — Netlify handles SPA fallback automatically.

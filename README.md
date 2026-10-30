@@ -86,10 +86,10 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment
 
-**Two-host setup (current):** the frontend is hosted on **Netlify** and the backend (API + MongoDB) on **Render** at `https://ngo-surveys-db.onrender.com`.
+**Two-host setup (current):** the frontend is hosted on **Netlify** and the backend (API + MongoDB) on **Render** at `https://ngo-surveys.onrender.com`.
 
 - `render.yaml` (repo root) is a Render Blueprint: create the service with Render's **New > Blueprint** page and point it at this repository. It reads the file automatically. Render then asks for the values marked `sync: false` (`MONGODB_URI`, `APP_URL`, `FRONTEND_URL`, SMTP credentials). The blueprint installs dependencies, builds the frontend, and starts the Express server.
-- `netlify.toml` (repo root) configures the Netlify site: it runs `npm ci && npm run build` with `VITE_API_BASE_URL=https://ngo-surveys-db.onrender.com` baked in, then publishes `dist/`.
+- `netlify.toml` (repo root) configures the Netlify site: it runs `npm ci && npm run build` with `VITE_API_BASE_URL=https://ngo-surveys.onrender.com` baked in, then publishes `dist/`.
 
 Because the frontend and backend are on different sites, the session cookie must be `SameSite=None; Secure`, which is what `CROSS_SITE_COOKIES=true` enables on the backend. The backend only echoes CORS headers for origins listed in `FRONTEND_URL`, so set it to your Netlify URL (comma-separated for multiple frontends).
 
