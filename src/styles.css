@@ -51,3 +51,11 @@ img, picture, video { max-width: 100%; height: auto; }
 html, body { overflow-x:hidden; }
 .hero > *, .stats > div, .section-heading > *, .cashout-callout > * { min-width:0; }
 [data-lucide], .lucide { flex-shrink:0; }
+
+/* ── Payment: copy account number to clipboard ─────────────────────────── */
+.account-copy-row { display:flex; align-items:center; gap:clamp(8px, 1.2vw, 10px); margin:clamp(14px, 2vw, 18px) 0; padding:clamp(10px, 1.5vw, 13px) clamp(12px, 2vw, 16px); background:#fff; border:1px solid #cfe7e0; border-radius:10px; font-size:clamp(11px, 1.3vw, 12px); color:#24544d; }
+.account-copy-row span { color:#648279; font-weight:700; }
+.account-copy-row strong { margin-left:auto; font-size:clamp(12px, 1.5vw, 14px); letter-spacing:.04em; color:#0f766e; }
+.copy-account-button { display:inline-flex; align-items:center; gap:6px; padding:clamp(7px, 1vw, 9px) clamp(10px, 1.5vw, 13px); border:1px solid #b6d5cd; border-radius:8px; background:#f0fbf8; color:#0f766e; font-weight:700; font-size:clamp(10px, 1.2vw, 11px); cursor:pointer; transition:.15s; }
+.copy-account-button:hover { background:#d7efe6; }
+.copy-account-button:active { transform:scale(.97); }

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { X, ShieldCheck, ClipboardCheck, AlertCircle } from 'lucide-react';
+import { X, ShieldCheck, ClipboardCheck, AlertCircle, Copy, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function PaymentModal({ survey, onClose, onUnlock }) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const verify = async () => {
     const code = /\b[A-Z]{2}\d{8}\b/i.test(message);
@@ -21,6 +22,14 @@ export default function PaymentModal({ survey, onClose, onUnlock }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyAccount = () => {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText('1500185563003').then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
   };
 
   return (
@@ -40,6 +49,14 @@ export default function PaymentModal({ survey, onClose, onUnlock }) {
             <p>Enter amount <strong>Ksh {survey.unlockFee}</strong>, then confirm PIN</p>
             <code>QK12345678 Confirmed. Ksh {survey.unlockFee}.00 PAID</code>
           </div>
+        </div>
+        <div className="account-copy-row">
+          <span>Account number</span>
+          <strong>1500185563003</strong>
+          <button type="button" className="copy-account-button" onClick={copyAccount} aria-label="Copy account number to clipboard" title="Copy account number to clipboard">
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+            {copied ? 'Copied' : 'Copy account number to clipboard'}
+          </button>
         </div>
         <label>Paste your confirmation message here
           <textarea value={message} onChange={e => { setMessage(e.target.value); setError(''); }} placeholder={`Example: QK12345678 Confirmed. Ksh ${survey.unlockFee}.00 PAID`} />

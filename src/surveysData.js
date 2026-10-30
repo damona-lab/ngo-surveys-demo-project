@@ -106,7 +106,7 @@ export const SURVEY_SETS = [
     ])
   },
   {
-    id: 'premplus-1', title: 'Global Health Initiatives', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 49, rewardPerQuestion: 90,
+    id: 'premplus-1', title: 'Global Health Initiatives', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 99, rewardPerQuestion: 90,
     questions: questions('pp1', [
       ['Which public health investment has the greatest impact?', o('Preventive care', 'Hospital equipment', 'Health insurance', 'Emergency response')],
       ['What builds trust in a vaccination programme?', o('Clear local information', 'Celebrity endorsements', 'Social media advertising', 'Financial incentives')],
@@ -116,7 +116,7 @@ export const SURVEY_SETS = [
     ])
   },
   {
-    id: 'premplus-2', title: 'Sustainable Urbanization', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 49, rewardPerQuestion: 90,
+    id: 'premplus-2', title: 'Sustainable Urbanization', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 99, rewardPerQuestion: 90,
     questions: questions('pp2', [
       ['What is the highest priority for growing towns?', o('Affordable housing', 'New shopping areas', 'Office buildings', 'Tourism facilities')],
       ['Which transport investment would help most?', o('Safe public transit', 'More parking', 'Private toll roads', 'Airport expansion')],
@@ -126,7 +126,7 @@ export const SURVEY_SETS = [
     ])
   },
   {
-    id: 'premplus-3', title: 'Microfinance Impact', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 49, rewardPerQuestion: 90,
+    id: 'premplus-3', title: 'Microfinance Impact', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 99, rewardPerQuestion: 90,
     questions: questions('pp3', [
       ['What makes a microloan useful for a small enterprise?', o('Affordable repayment terms', 'Largest possible amount', 'No business plan', 'Very short deadlines')],
       ['Which non-financial service should accompany credit?', o('Business coaching', 'Advertising only', 'Tax collection', 'None')],
@@ -136,7 +136,7 @@ export const SURVEY_SETS = [
     ])
   },
   {
-    id: 'premplus-4', title: 'Disaster Relief Preparedness', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 49, rewardPerQuestion: 90,
+    id: 'premplus-4', title: 'Disaster Relief Preparedness', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 99, rewardPerQuestion: 90,
     questions: questions('pp4', [
       ['What information is most important before a disaster?', o('Trusted early warnings', 'Social media rumours', 'National news only', 'None until it happens')],
       ['Where should emergency supplies be stored?', o('Accessible community locations', 'Private homes only', 'Distant warehouses', 'Schools without access plans')],
@@ -146,7 +146,7 @@ export const SURVEY_SETS = [
     ])
   },
   {
-    id: 'premplus-5', title: 'AI in Humanitarian Aid', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 49, rewardPerQuestion: 90,
+    id: 'premplus-5', title: 'AI in Humanitarian Aid', tier: SURVEY_TIERS.PREMIUM_PLUS, unlockFee: 99, rewardPerQuestion: 90,
     questions: questions('pp5', [
       ['What is a helpful use of AI in humanitarian work?', o('Improving aid needs forecasts', 'Replacing local staff entirely', 'Selling personal data', 'Making final decisions alone')],
       ['What should be checked before using AI-generated insights?', o('Accuracy and possible bias', 'How quickly it was made', 'Its visual design', 'Whether it is popular')],
