@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import nodemailer from 'nodemailer';
@@ -68,13 +68,13 @@ app.post('/api/auth/signup', async (req, res, next) => {
     const email = String(req.body.email || '').trim().toLowerCase();
     const phone = String(req.body.phone || '').replace(/\s/g, '');
     const password = String(req.body.password || '');
-    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 10 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 10–72 characters.' });
+    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 8 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 8â€“72 characters.' });
     const user = await User.create({ name, email, phone, password_hash: await hashPassword(password), balance: 0, total_earned: 0, status: 'active' });
     setSession(res, user);
     res.status(201).json({ user: publicUser(user) });
   } catch (err) {
     if (isDuplicateKeyError(err)) return res.status(409).json({ error: 'An account with this email already exists.' });
-    if (isValidationError(err)) return res.status(400).json({ error: 'Enter a valid name and email, and a password of 10–72 characters.' });
+    if (isValidationError(err)) return res.status(400).json({ error: 'Enter a valid name and email, and a password of 8â€“72 characters.' });
     next(err);
   }
 });

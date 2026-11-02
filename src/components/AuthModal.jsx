@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { X, Mail, Lock, User as UserIcon, LogIn, UserPlus, AlertCircle, Phone } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, LogIn, UserPlus, AlertCircle, Phone, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthModal({ open, onClose }) {
@@ -7,6 +7,8 @@ export default function AuthModal({ open, onClose }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const { signup, login } = useAuth();
 
   if (!open) return null;
@@ -71,10 +73,13 @@ export default function AuthModal({ open, onClose }) {
                   </div>
                 </label>
                 <label className="auth-field">
-                  <span>Password (minimum 8 characters)</span>
+                  <span>Password</span>
                   <div className="auth-input-wrap">
                     <Lock size={17} />
-                    <input name="password" value={form.password} onChange={update} type="password" placeholder="Your password" required />
+                    <input name="password" value={form.password} onChange={update} type={showLoginPassword ? "text" : "password"} placeholder="Your password" autoComplete="current-password" required />
+                    <button type="button" className="auth-password-toggle" onClick={() => setShowLoginPassword(value => !value)} aria-label={showLoginPassword ? "Hide password" : "Show password"} aria-pressed={showLoginPassword}>
+                      {showLoginPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
                   </div>
                 </label>
 
@@ -135,7 +140,10 @@ export default function AuthModal({ open, onClose }) {
                   <span>Password (minimum 8 characters)</span>
                   <div className="auth-input-wrap">
                     <Lock size={17} />
-                    <input name="password" value={form.password} onChange={update} type="password" placeholder="At least 8 characters" minLength={8} maxLength={72} autoComplete="new-password" required />
+                    <input name="password" value={form.password} onChange={update} type={showSignupPassword ? "text" : "password"} placeholder="At least 8 characters" minLength={8} maxLength={72} autoComplete="new-password" required />
+                    <button type="button" className="auth-password-toggle" onClick={() => setShowSignupPassword(value => !value)} aria-label={showSignupPassword ? "Hide password" : "Show password"} aria-pressed={showSignupPassword}>
+                      {showSignupPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
                   </div>
                 </label>
 
