@@ -28,7 +28,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
   }
@@ -132,7 +132,9 @@ app.post('/api/auth/reset-request', async (req, res, next) => {
       // clicks an earlier reset email still succeeds instead of hitting "invalid or expired".
       // Every token stays single-use, and a successful reset invalidates all of them.
       await PasswordReset.create({ user_id: account._id, token: digest, used: false, expires_at: new Date(Date.now() + 60 * 60 * 1000) });
-      const link = `${process.env.APP_URL}/?reset=${encodeURIComponent(raw)}`;
+      const appUrl = (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
+      if (!appUrl) throw new Error('Set APP_URL or deploy on Render to send password reset links.');
+      const link = `${appUrl}/?reset=${encodeURIComponent(raw)}`;
       // Delivery problems are logged but never surfaced, so the response is identical
       // whether or not the address exists and the endpoint cannot enumerate accounts.
       try {

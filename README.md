@@ -84,43 +84,15 @@ Multi-document transactions require a replica set or sharded cluster. The server
 
 Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the public `APP_URL`. Reset links are random, stored only as SHA-256 hashes, expire after one hour, and can be used once. Without SMTP settings the app does not send reset links.
 
-## Deployment
+## Deployment on Render
 
-**Two-host setup:** the frontend is hosted separately (e.g. Netlify) and the backend
-(API + MongoDB) is hosted on **Render**.
+This project is a single Node web service: Render builds the React frontend into `dist/`, and Express serves the frontend and `/api` from the same origin. The root `render.yaml` is a Blueprint; in Render choose **New > Blueprint** and connect this repository.
 
-- `render.yaml` (repo root) is a Render Blueprint: create the service with Render's
-  **New > Blueprint** page and point it at this repository. It reads the file
-  automatically. Render then asks for the values marked `sync: false`
-  (`MONGODB_URI`, `APP_URL`, `FRONTEND_URL`, `VITE_API_BASE_URL`, SMTP credentials).
-  The blueprint installs dependencies, builds the frontend, and starts the Express
-  server.
-- `netlify.toml` (repo root) configures the Netlify site: it runs
-  `npm ci && npm run build` with `VITE_API_BASE_URL` baked in, then publishes `dist/`.
-  Set `VITE_API_BASE_URL` to the backend's public HTTPS URL before deploying.
+Before deploying, create a MongoDB Atlas cluster and database user, allow Render to connect, and copy its connection string. In the Blueprint, provide `MONGODB_URI`; Render generates `JWT_SECRET`. The default configuration uses the Render service URL for password reset links, same-origin API calls, secure session cookies, and `/api/health` as its health check. SMTP variables are optional; configure them to enable password reset emails. After deploy, seed survey definitions once from a machine with production database access using `npm run db:seed` and the production `MONGODB_URI`.
 
-Because the frontend and backend are on different sites, the session cookie must be
-`SameSite=None; Secure`, which is what `CROSS_SITE_COOKIES=true` enables on the
-backend. The backend only echoes CORS headers for origins listed in `FRONTEND_URL`,
-so set it to your frontend's exact origin (scheme and hostname, without a path). Set
-`APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true`
-only when the frontend and backend are on different sites; same-site subdomains can
-keep it `false`.
+For a separately hosted frontend, build with `VITE_API_BASE_URL` set to the Render service URL, set `FRONTEND_URL` and `APP_URL` to the frontend origin, and set `CROSS_SITE_COOKIES=true`. The backend permits credentialed requests only from origins listed in `FRONTEND_URL`.
 
-`npm run build` compiles the React/JSX sources under `src/` into the browser bundle in
-`dist/` (`dist/index.html`, `dist/assets/index.js`, `dist/assets/index.css`) using
-esbuild — a compiler/bundler only, with no dev server and no Vite. When
-`VITE_API_BASE_URL` is set (Netlify build), the bundle calls `/api` on that origin;
-when it is empty (same-origin Render), the bundle calls `/api` on its own origin.
-
-To host the frontend separately from the API, set `VITE_API_BASE_URL` in the build environment (it is read by `scripts/build.mjs`) to the backend's public HTTPS URL. Set `FRONTEND_URL` on the backend to the frontend's exact origin (scheme and hostname, without a path), and set `APP_URL` to the frontend URL for password reset links. Set `CROSS_SITE_COOKIES=true` only when the frontend and backend are on different sites; same-site subdomains can keep it `false`.
-
-Run `npm run db:seed` once against the production database from a machine that can reach it, with that database's `MONGODB_URI` in `.env`.
-
-Use a replica set or sharded cluster so multi-document transactions are available, and enable TLS for the database connection (`DB_SSL=true`) together with HTTPS so secure session cookies are enabled. The server trusts the proxy in front of it so rate limiting counts real visitor addresses.
-
-The previous Netlify static hosting configuration cannot provide this API or safely connect to a database. Use a Node server deployment for the authenticated app.
-
+Render runs Node 22 as pinned in the Blueprint. Local development needs Node 20 or newer and a reachable MongoDB replica set or Atlas cluster. `npm start` serves both the UI and API; `npm run build` rebuilds the frontend.
 ## Current payment limitation
 
 The old demo accepted text copied from a payment SMS as proof. That is not verifiable, so the API does not grant paid survey unlocks based on pasted text. Integrate a payment provider with server-side payment verification before enabling paid unlocks. Withdrawal requests are saved as pending records; they do not initiate an M-Pesa transfer.

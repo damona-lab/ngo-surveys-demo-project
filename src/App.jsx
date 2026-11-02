@@ -29,14 +29,14 @@ export default function App() {
     else setActiveSurvey(survey);
   };
 
-  const unlockSurvey = id => {
-    unlock(id);
+  const unlockSurvey = async id => {
+    await unlock(id);
     setPaymentSurvey(null);
     setToast('Survey unlocked');
   };
 
-  const handleAnswer = (surveyId, questionId, reward) => {
-    answer(surveyId, questionId, reward);
+  const handleAnswer = async (surveyId, questionId, reward, answerIndex) => {
+    await answer(surveyId, questionId, reward, answerIndex);
     setToast(`+ KSh ${reward.toFixed(2)} reward earned`);
   };
 
@@ -109,7 +109,7 @@ export default function App() {
       {toast && <div className="toast"><CircleCheck size={18} />{toast}</div>}
       {paymentSurvey && <PaymentModal survey={paymentSurvey} onClose={() => setPaymentSurvey(null)} onUnlock={unlockSurvey} />}
       {activeSurvey && <SurveyRunner survey={activeSurvey} completedIds={state.surveys[activeSurvey.id]?.completedQuestions || []} onAnswer={handleAnswer} onClose={() => setActiveSurvey(null)} />}
-       {withdrawOpen && <WithdrawModal balance={state.balance} onWithdraw={(amount, name, phone) => { withdraw(amount, name, phone); setWithdrawOpen(false); }} onClose={() => setWithdrawOpen(false)} />}
+       {withdrawOpen && <WithdrawModal balance={state.balance} onWithdraw={(amount, name, phone) => withdraw(amount, name, phone)} onClose={() => setWithdrawOpen(false)} />}
        {profileOpen && <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />}
     </div>
   );

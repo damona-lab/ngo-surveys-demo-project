@@ -59,8 +59,8 @@ export function AuthProvider({ children }) {
     setState({ balance: 0, totalEarned: 0, surveys: {}, withdrawals: [] });
   }
 
-  async function answer(surveyId, questionId, reward) {
-    await API.answer(surveyId, questionId, 0);
+  async function answer(surveyId, questionId, reward, answerIndex) {
+    await API.answer(surveyId, questionId, answerIndex);
     setState(s => ({ ...s, balance: +(s.balance + reward).toFixed(2), totalEarned: +(s.totalEarned + reward).toFixed(2), surveys: { ...s.surveys, [surveyId]: { ...s.surveys[surveyId], unlocked: true, completedQuestions: [...(s.surveys[surveyId]?.completedQuestions || []), questionId] } } }));
   }
 

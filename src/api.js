@@ -22,6 +22,9 @@ const API = (base => {
     answer(surveyId, questionId, answerIndex) { return this.post('/answers', { surveyId, questionId, answerIndex }); },
     unlock(surveyId) { return this.post(`/surveys/${surveyId}/unlock`); },
     withdraw(name, phone, amount) { return this.post('/withdrawals', { name, phone, amount }); },
+    me() { return this.get('/auth/me'); },
+    requestPasswordReset(email) { return this.post('/auth/reset-request', { email }); },
+    resetPassword(token, password) { return this.post('/auth/reset', { token, password }); },
   };
 })(typeof import.meta !== 'undefined' ? import.meta.env.VITE_API_BASE_URL : '');
 

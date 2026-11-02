@@ -9,7 +9,7 @@ export default function WithdrawModal({ balance, onWithdraw, onClose }) {
 
   const update = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const submit = e => {
+  const submit = async e => {
     e.preventDefault();
     const amount = Number(form.amount);
     if (!form.name.trim()) return setError('Enter a name for this request.');
@@ -17,10 +17,14 @@ export default function WithdrawModal({ balance, onWithdraw, onClose }) {
     if (amount < 500 || amount > balance) return setError(`Enter an amount from KSh 500 to KSh ${balance.toFixed(2)}.`);
     setError('');
     setProcessing(true);
-    onWithdraw(amount, form.name.trim(), form.phone.replace(/\s/g, ''));
-    // onWithdraw now resolves after the API call; show completion state
-    setProcessing(false);
-    setComplete(true);
+    try {
+      await onWithdraw(amount, form.name.trim(), form.phone.replace(/\s/g, ''));
+      setComplete(true);
+    } catch (err) {
+      setError(err.message || 'Could not record the withdrawal request.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -32,7 +36,7 @@ export default function WithdrawModal({ balance, onWithdraw, onClose }) {
             <div className="modal-icon green"><CheckCircle2 /></div>
             <span className="eyebrow">COMPLETE</span>
             <h2>Request recorded</h2>
-            <p>KSh {Number(form.amount).toFixed(2)} will be sent to {form.phone} within 24 hours.</p>
+            <p>Your request for KSh {Number(form.amount).toFixed(2)} to {form.phone} has been recorded for processing. This app does not send M-Pesa payments automatically.</p>
             <button className="primary-button" onClick={onClose}>Close</button>
           </div>
         ) : (
@@ -40,7 +44,7 @@ export default function WithdrawModal({ balance, onWithdraw, onClose }) {
             <div className="modal-icon gold"><Landmark /></div>
             <span className="eyebrow">CASH-OUT</span>
             <h2>Withdraw cash</h2>
-            <p className="modal-copy">Minimum withdrawal: KSh 500. Funds are sent directly to your M-Pesa number.</p>
+            <p className="modal-copy">Minimum request: KSh 500. A withdrawal request is recorded for processing; this app does not send M-Pesa payments automatically.</p>
             <form onSubmit={submit}>
               <label>Full name<input name="name" value={form.name} onChange={update} placeholder="e.g. Amina Wanjiku" /></label>
               <label>M-Pesa phone number<input name="phone" value={form.phone} onChange={update} placeholder="07XXXXXXXX" inputMode="numeric" /></label>

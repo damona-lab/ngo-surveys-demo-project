@@ -5,14 +5,24 @@ export default function SurveyRunner({ survey, completedIds, onAnswer, onClose }
   const [index, setIndex] = useState(Math.max(0, survey.questions.findIndex(item => !completedIds.includes(item.id))));
   const [choice, setChoice] = useState(null);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const question = survey.questions[index];
   const alreadyDone = completedIds.includes(question.id);
 
-  const submit = () => {
+  const submit = async () => {
     if (alreadyDone) return advance();
     if (choice === null) return;
-    onAnswer(survey.id, question.id, survey.rewardPerQuestion);
-    setDone(true);
+    setSaving(true);
+    setError('');
+    try {
+      await onAnswer(survey.id, question.id, survey.rewardPerQuestion, choice);
+      setDone(true);
+    } catch (err) {
+      setError(err.message || 'Could not save this answer. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const advance = () => {
@@ -51,8 +61,9 @@ export default function SurveyRunner({ survey, completedIds, onAnswer, onClose }
                 </button>
               ))}
             </div>
-            <button className="primary-button submit-answer" disabled={!alreadyDone && choice === null} onClick={submit}>
-              {alreadyDone ? 'Continue' : 'Submit answer'} <ArrowRight size={18} />
+            {error && <p className="form-error">{error}</p>}
+            <button className="primary-button submit-answer" disabled={saving || (!alreadyDone && choice === null)} onClick={submit}>
+              {saving ? 'Saving…' : alreadyDone ? 'Continue' : 'Submit answer'} <ArrowRight size={18} />
             </button>
           </>
         )}
