@@ -231,3 +231,59 @@ html, body { overflow-x:hidden; }
 .auth-password-toggle{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--auth-accent);cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}
 .auth-password-toggle:hover{transform:scale(1.06);border-color:color-mix(in srgb,var(--auth-accent) 35%,transparent);background:color-mix(in srgb,var(--auth-accent) 14%,transparent)}
 .auth-password-toggle:focus-visible{outline:2px solid var(--auth-accent);outline-offset:2px}
+
+/* Device-safe sizing for auth on phones, tablets, and landscape screens */
+.auth-backdrop{min-height:100vh;min-height:100dvh;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.auth-glass-shell{width:min(100%,560px);max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);max-height:calc(100dvh - max(24px,env(safe-area-inset-top) + env(safe-area-inset-bottom)));border-radius:clamp(16px,4vw,26px)}
+.auth-panels{width:100%;min-width:0}
+.auth-panel{min-width:0;max-width:100%;padding-left:clamp(14px,5vw,42px);padding-right:clamp(14px,5vw,42px)}
+.auth-panel-inner{min-width:0;width:100%}
+.auth-input-wrap{min-width:0}
+.auth-input-wrap input{min-width:0}
+.auth-password-toggle{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.auth-password-toggle svg{width:17px;height:17px}
+@media(max-width:600px){
+  .auth-backdrop{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+  .auth-glass-shell--login,.auth-glass-shell--signup{width:100%;max-width:500px}
+  .auth-glass-shell--login .auth-panels{height:min(520px,calc(100dvh - 20px))}
+  .auth-glass-shell--signup .auth-panels{height:min(620px,calc(100dvh - 20px))}
+  .auth-panel{padding-left:clamp(14px,5vw,24px);padding-right:clamp(14px,5vw,24px)}
+}
+@media(max-width:380px){
+  .auth-glass-shell{border-radius:16px}
+  .auth-glass-shell--login .auth-panel,.auth-glass-shell--signup .auth-panel{padding-left:14px;padding-right:14px}
+  .auth-logo{gap:9px}
+  .auth-logo-mark{width:38px;height:38px}
+  .auth-logo-image{width:26px;height:26px}
+  .auth-glass-shell h2{font-size:24px}
+  .auth-copy{font-size:12px}
+  .auth-input-wrap{gap:8px;padding:0 10px}
+  .auth-input-wrap input{font-size:12px}
+  .auth-password-toggle{flex-basis:28px;width:28px;height:28px}
+  .auth-switch-text{font-size:11px}
+}
+@media(max-height:520px) and (min-width:620px){
+  .auth-backdrop{padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left))}
+  .auth-glass-shell--login,.auth-glass-shell--signup{width:min(100%,760px)}
+  .auth-glass-shell--login .auth-panels{height:calc(100dvh - 20px)}
+  .auth-glass-shell--signup .auth-panels{height:calc(100dvh - 20px)}
+  .auth-glass-shell--signup .auth-panel-inner{max-width:680px}
+  .auth-glass-shell--signup .auth-logo{margin-bottom:6px}
+  .auth-glass-shell--signup .auth-copy{margin-bottom:8px}
+  .auth-glass-shell--signup .auth-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px}
+  .auth-glass-shell--signup .auth-form .auth-submit,.auth-glass-shell--signup .auth-form .auth-error{grid-column:1/-1}
+  .auth-glass-shell--signup .auth-switch-text{margin-top:7px}
+}
+@media(max-height:520px) and (max-width:619px){
+  .auth-glass-shell--login .auth-panels,.auth-glass-shell--signup .auth-panels{height:calc(100dvh - 20px)}
+  .auth-glass-shell--login .auth-panel,.auth-glass-shell--signup .auth-panel{padding-top:8px;padding-bottom:8px}
+  .auth-glass-shell--login .auth-logo,.auth-glass-shell--signup .auth-logo{margin-bottom:5px}
+  .auth-glass-shell--login .auth-logo small,.auth-glass-shell--signup .auth-logo small{display:none}
+  .auth-glass-shell--signup h2{font-size:22px}
+  .auth-glass-shell--signup .auth-copy{font-size:11px;line-height:1.25;margin-bottom:5px}
+  .auth-glass-shell--signup .auth-form{gap:4px}
+  .auth-glass-shell--signup .auth-field{gap:2px;font-size:9px}
+  .auth-glass-shell--signup .auth-input-wrap{height:30px}
+  .auth-glass-shell--signup .auth-submit{min-height:33px}
+  .auth-glass-shell--signup .auth-switch-text{margin-top:4px;font-size:10px}
+}
