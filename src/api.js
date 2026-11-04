@@ -14,7 +14,7 @@ const API = (base => {
     },
     get(path) { return this.request(path); },
     post(path, body) { return this.request(path, { method: 'POST', body: JSON.stringify(body) }); },
-    signup(name, email, phone, password) { return this.post('/auth/signup', { name, email, phone, password }); },
+    signup(name, email, phone, password, confirmPassword) { return this.post('/auth/signup', { name, email, phone, password, confirmPassword }); },
     login(email, password) { return this.post('/auth/login', { email, password }); },
     logout() { return this.post('/auth/logout'); },
     profile(data) { return this.request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }); },

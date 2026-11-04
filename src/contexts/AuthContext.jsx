@@ -31,9 +31,10 @@ export function AuthProvider({ children }) {
 
   useEffect(() => { load(); }, []);
 
-   async function signup(name, email, phone, password) {
+   async function signup(name, email, phone, password, confirmPassword) {
+    if (password !== confirmPassword) throw new Error('Passwords do not match.');
     setError('');
-    const data = await API.signup(name, email, phone, password);
+    const data = await API.signup(name, email, phone, password, confirmPassword);
     setUser(data.user);
     const s = await API.state();
     setState(s.state);

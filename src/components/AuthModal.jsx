@@ -36,10 +36,10 @@ export default function AuthModal({ open, onClose }) {
     }
   };
 
-  const switchMode = (next) => {
+const switchMode = (next) => {
     setMode(next);
     setError('');
-    setForm({ name: '', email: '', phone: '', password: '' });
+    setForm({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   };
 
   return (
