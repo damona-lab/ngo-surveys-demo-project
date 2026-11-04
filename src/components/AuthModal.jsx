@@ -4,11 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthModal({ open, onClose }) {
   const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup, login } = useAuth();
 
   if (!open) return null;
@@ -17,13 +18,17 @@ export default function AuthModal({ open, onClose }) {
 
   const submit = async e => {
     e.preventDefault();
+    if (mode === 'signup' && form.password !== form.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
       if (mode === 'login') await login(form.email, form.password);
-      else await signup(form.name, form.email, form.phone, form.password);
+      else await signup(form.name, form.email, form.phone, form.password, form.confirmPassword);
       onClose();
-      setForm({ name: '', email: '', phone: '', password: '' });
+      setForm({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -136,13 +141,23 @@ export default function AuthModal({ open, onClose }) {
                     <input name="email" value={form.email} onChange={update} type="email" placeholder="you@example.com" required />
                   </div>
                 </label>
-                <label className="auth-field">
+<label className="auth-field">
                   <span>Password (minimum 8 characters)</span>
                   <div className="auth-input-wrap">
                     <Lock size={17} />
                     <input name="password" value={form.password} onChange={update} type={showSignupPassword ? "text" : "password"} placeholder="At least 8 characters" minLength={8} maxLength={72} autoComplete="new-password" required />
                     <button type="button" className="auth-password-toggle" onClick={() => setShowSignupPassword(value => !value)} aria-label={showSignupPassword ? "Hide password" : "Show password"} aria-pressed={showSignupPassword}>
                       {showSignupPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </label>
+                <label className="auth-field">
+                  <span>Confirm password</span>
+                  <div className="auth-input-wrap">
+                    <Lock size={17} />
+                    <input name="confirmPassword" value={form.confirmPassword} onChange={update} type={showConfirmPassword ? "text" : "password"} placeholder="Repeat your password" minLength={8} maxLength={72} autoComplete="new-password" required />
+                    <button type="button" className="auth-password-toggle" onClick={() => setShowConfirmPassword(value => !value)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} aria-pressed={showConfirmPassword}>
+                      {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   </div>
                 </label>

@@ -64,10 +64,11 @@ function publicUser(user) { return { id: String(user._id), name: user.name, emai
 
 app.post('/api/auth/signup', async (req, res, next) => {
   try {
-    const name = String(req.body.name || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const phone = String(req.body.phone || '').replace(/\s/g, '');
-    const password = String(req.body.password || '');
+    const { confirmPassword, ...body } = req.body || {};
+    const name = String(body.name || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const phone = String(body.phone || '').replace(/\s/g, '');
+    const password = String(body.password || '');
     if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 8 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 8â€“72 characters.' });
     const user = await User.create({ name, email, phone, password_hash: await hashPassword(password), balance: 0, total_earned: 0, status: 'active' });
     setSession(res, user);

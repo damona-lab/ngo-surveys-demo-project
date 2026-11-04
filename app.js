@@ -53,7 +53,7 @@ function renderAuth() {
   const title = mode === 'reset' ? 'Choose a new password' : isSignup ? 'Create your account' : mode === 'forgot' ? 'Reset your password' : 'Welcome back';
   const intro = mode === 'reset' ? 'Choose a strong password to secure your account.' : isSignup ? 'Join the community and keep your survey progress safe.' : mode === 'forgot' ? 'We’ll email you a secure reset link if an account exists.' : 'Sign in to continue to your surveys.';
   return `<main class="auth-page"><section class="auth-card"><a class="brand auth-brand" href="#top"><span class="brand-mark brand-logo"><img src="/logo-mark.svg" alt="" aria-hidden="true" /></span><span class="brand-wordmark">NGO <b>SURVEYS</b><span class="brand-tagline">Research for Impact &amp; Development</span></span></a><p class="eyebrow">COMMUNITY RESEARCH</p><h1>${title}</h1><p class="auth-intro">${intro}</p>
-    <form id="auth-form">${isSignup ? '<label>Full name<input name="name" autocomplete="name" required minlength="2" maxlength="120" /></label>' : ''}${mode !== 'reset' ? '<label>Email address<input name="email" type="email" autocomplete="email" required maxlength="255" /></label>' : ''}${['login','signup','reset'].includes(mode) ? `<label>${mode==='login'?'Password':mode==='reset'?'New password':'Password'}<input name="password" type="password" autocomplete="${mode==='login'?'current-password':'new-password'}" required minlength="10" maxlength="72" /></label>` : ''}
+    <form id="auth-form">${isSignup ? '<label>Full name<input name="name" autocomplete="name" required minlength="2" maxlength="120" /></label>' : ''}${mode !== 'reset' ? '<label>Email address<input name="email" type="email" autocomplete="email" required maxlength="255" /></label>' : ''}${['login','signup','reset'].includes(mode) ? `<label>${mode==='login'?'Password':mode==='reset'?'New password':'Password'}<input name="password" type="password" autocomplete="${mode==='login'?'current-password':'new-password'}" required minlength="10" maxlength="72" /></label>` : ''}${isSignup ? '<label>Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="72" /></label>' : ''}
     ${authError ? `<p class="form-error">${authError}</p>` : ''}${authMessage ? `<p class="auth-message">${authMessage}</p>` : ''}<button class="primary-button full" ${authBusy?'disabled':''}>${authBusy?'Please wait…':mode==='reset'?'Save new password':mode==='forgot'?'Send reset link':isSignup?'Create account':'Sign in'}</button></form>
     ${resetToken ? '<div class="auth-links"><span>The link not working? <button type="button" data-auth-view="forgot" data-clear-reset="1">Request a new one</button></span></div>' : `<div class="auth-links">${mode==='login'?'<button data-auth-view="forgot">Forgot password?</button><span>New here? <button data-auth-view="signup">Create account</button></span>':mode==='signup'?'<span>Already have an account? <button data-auth-view="login">Sign in</button></span>':'<span>Remembered it? <button data-auth-view="login">Sign in</button></span>'}</div>`}
     <p class="auth-secure">Passwords are securely hashed. Your account data is private.</p></section></main>`;
@@ -523,8 +523,14 @@ function attachHandlers() {
       const formData = new FormData(form);
       const resetToken = new URLSearchParams(location.search).get('reset');
       const mode = resetToken ? 'reset' : authView;
-      authBusy = true; authError = ''; authMessage = ''; render();
       const values = Object.fromEntries(formData.entries());
+      if (mode === 'signup' && values.password !== values.confirmPassword) {
+        authError = 'Passwords do not match.';
+        authBusy = false;
+        render();
+        return;
+      }
+      authBusy = true; authError = ''; authMessage = ''; render();
       const endpoint = mode === 'signup' ? '/api/auth/signup' : mode === 'login' ? '/api/auth/login' : mode === 'forgot' ? '/api/auth/reset-request' : '/api/auth/reset';
       const payload = mode === 'reset' ? { token: resetToken, password: values.password } : values;
       api(endpoint, { method: 'POST', body: JSON.stringify(payload) }).then(async result => {
