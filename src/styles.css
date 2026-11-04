@@ -1,4 +1,4 @@
-﻿:root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #e8f3f1; background: #082725; font-synthesis: none; }
+:root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #e8f3f1; background: #082725; font-synthesis: none; }
 * { box-sizing: border-box; } body { margin: 0; min-width: 320px; background: #082725; } button, input, textarea { font: inherit; } button { cursor: pointer; } button:disabled { cursor: not-allowed; opacity: .55; } .app-shell { min-height: 100vh; padding-top: clamp(64px, 8vh, 80px); background: radial-gradient(circle at 85% 0%, #125b52 0, transparent 31rem), #082725; }
 .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: clamp(64px, 8vh, 80px); max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 28px); display: flex; align-items: center; justify-content: space-between; gap: clamp(12px, 2vw, 20px); flex-wrap: wrap; border-bottom: 1px solid #ffffff1c; background: rgba(8, 39, 37, 0.72); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); box-shadow: 0 2px 16px rgba(0,0,0,0.18); }
 .topbar::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent); pointer-events: none; } .brand { display: flex; gap: clamp(6px, 1.5vw, 10px); align-items: center; color: white; text-decoration: none; font-size: clamp(13px, 1.8vw, 15px); letter-spacing: .08em; } .brand b { color: #69e0c3; } .brand small { font-size: clamp(7px, 1vw, 8px); background: #f59e0b; color: #1c271f; border-radius: 4px; padding: 2px 4px; margin-left: 4px; letter-spacing: .08em; vertical-align: middle; }.brand-mark { width: 34px; height: 34px; display:grid;place-items:center;border-radius:10px;background:#10a38e; color:#fff; overflow:hidden; flex-shrink: 0; }.brand-mark img { width:100%; height:100%; object-fit:cover; }.tier-links { display:flex; gap:clamp(12px, 2vw, 20px); }
@@ -291,5 +291,5 @@ html, body { overflow-x:hidden; }
   .auth-glass-shell--signup .auth-switch-text{margin-top:4px;font-size:10px}
 }
 
-.tier-badge.elite { background:#522d6f;color:#e4c7ff; }
-.survey-card.elite { background:#2d2440; }
+.tier-badge.elite { background:#743a2d;color:#ffd0bd; }
+.survey-card.elite { background:#342522; }
