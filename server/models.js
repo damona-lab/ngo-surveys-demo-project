@@ -42,7 +42,7 @@ const surveySchema = new Schema({
   // The survey id is the natural key used by the API, so it is the document _id.
   _id: { type: String, required: true, trim: true, maxlength: 40 },
   title: { type: String, required: true, trim: true, maxlength: 200 },
-  tier: { type: String, required: true, enum: ['free', 'premium', 'premium_plus'], index: true },
+  tier: { type: String, required: true, enum: ['free', 'premium', 'premium_plus', 'elite'], index: true },
   unlock_fee: money(),
   reward_per_question: money(),
   questions: { type: [questionSchema], default: [] },

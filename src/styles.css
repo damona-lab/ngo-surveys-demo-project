@@ -290,3 +290,6 @@ html, body { overflow-x:hidden; }
   .auth-glass-shell--signup .auth-submit{min-height:33px}
   .auth-glass-shell--signup .auth-switch-text{margin-top:4px;font-size:10px}
 }
+
+.tier-badge.elite { background:#522d6f;color:#e4c7ff; }
+.survey-card.elite { background:#2d2440; }

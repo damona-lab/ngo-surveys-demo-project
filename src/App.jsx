@@ -40,7 +40,7 @@ export default function App() {
     setToast(`+ KSh ${reward.toFixed(2)} reward earned`);
   };
 
-  const tierOrder = [SURVEY_TIERS.FREE, SURVEY_TIERS.PREMIUM, SURVEY_TIERS.PREMIUM_PLUS];
+  const tierOrder = [SURVEY_TIERS.FREE, SURVEY_TIERS.PREMIUM, SURVEY_TIERS.PREMIUM_PLUS, SURVEY_TIERS.ELITE];
 
   if (loading) return <div className="loading-screen"><div className="spinner" /> Loading…</div>;
 
@@ -77,8 +77,8 @@ export default function App() {
           </div>
         </section>
         <section className="stats">
-          <div><span>Survey sets</span><strong>15</strong><small>Across three research tiers</small></div>
-          <div><span>Questions</span><strong>75</strong><small>Each answer is saved to the database</small></div>
+          <div><span>Survey sets</span><strong>{SURVEY_SETS.length}</strong><small>Across four research tiers</small></div>
+          <div><span>Questions</span><strong>{SURVEY_SETS.reduce((sum, survey) => sum + survey.questions.length, 0)}</strong><small>Each answer is saved to the database</small></div>
           <div><span>Total rewards</span><strong>KSh {state.totalEarned.toFixed(2)}</strong><small>Earned from completed surveys</small></div>
         </section>
         {tierOrder.map(tier => (
@@ -86,7 +86,7 @@ export default function App() {
             <div className="section-heading">
               <div>
                 <span className={`tier-badge ${TIER_DETAILS[tier].color}`}>{TIER_DETAILS[tier].label}</span>
-                <h2>{tier === 'free' ? 'Start with community insight' : tier === 'premium' ? 'Explore focused research' : 'Contribute to global thinking'}</h2>
+                <h2>{tier === 'free' ? 'Start with community insight' : tier === 'premium' ? 'Explore focused research' : tier === SURVEY_TIERS.PREMIUM_PLUS ? 'Contribute to global thinking' : 'Explore specialised research'}</h2>
                 <p>{TIER_DETAILS[tier].description}</p>
               </div>
               {tier !== 'free' && <span className="unlock-note">Unlock fee: KSh {SURVEY_SETS.find(s => s.tier === tier).unlockFee}</span>}

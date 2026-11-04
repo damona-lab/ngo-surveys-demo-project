@@ -19,6 +19,7 @@ export default function Navbar({ balance, totalEarned, userName, userEmail, onWi
         <button onClick={() => document.getElementById('free')?.scrollIntoView({ behavior: 'smooth' })}>Free</button>
         <button onClick={() => document.getElementById('premium')?.scrollIntoView({ behavior: 'smooth' })}>Premium</button>
         <button onClick={() => document.getElementById('premium_plus')?.scrollIntoView({ behavior: 'smooth' })}>Plus</button>
+        <button onClick={() => document.getElementById('elite')?.scrollIntoView({ behavior: 'smooth' })}>Elite</button>
       </nav>
       <div className="wallet-wrap">
         <div className="wallet">

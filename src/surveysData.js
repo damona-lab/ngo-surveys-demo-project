@@ -1,4 +1,4 @@
-export const SURVEY_TIERS = { FREE: 'free', PREMIUM: 'premium', PREMIUM_PLUS: 'premium_plus' };
+export const SURVEY_TIERS = { FREE: 'free', PREMIUM: 'premium', PREMIUM_PLUS: 'premium_plus', ELITE: 'elite' };
 
 const q = (id, text, options) => ({ id, text, options });
 const questions = (prefix, rows) => rows.map(([text, options], i) => q(`${prefix}_q${i + 1}`, text, options));
@@ -154,11 +154,42 @@ export const SURVEY_SETS = [
       ['What is essential when collecting data for AI?', o('Consent and data protection', 'Collecting everything possible', 'Publicly naming people', 'Selling data access')],
       ['How should AI tools be introduced to field teams?', o('Training and gradual testing', 'Immediate mandatory use', 'Without explanation', 'Only through email')]
     ])
+  },
+  {
+    id: 'elite-1', title: 'Resilient Communities', tier: SURVEY_TIERS.ELITE, unlockFee: 149, rewardPerQuestion: 130,
+    questions: questions('e1', [
+      ['What would most strengthen your community during a crisis?', o('Trusted local response teams', 'Reliable emergency funding', 'Better communications', 'More outside coordination')],
+      ['Which local service should be restored first after a disruption?', o('Health care', 'Clean water', 'Electricity', 'Transport')],
+      ['How should communities prepare for future shocks?', o('Local plans and regular drills', 'Central plans only', 'Short-term relief', 'Wait until a crisis occurs')],
+      ['Who should shape resilience investments?', o('Residents and local organisations', 'Government agencies alone', 'Donors alone', 'Private contractors alone')],
+      ['What is the best sign that a community is becoming more resilient?', o('People recover faster and include vulnerable groups', 'More plans are written', 'More equipment is purchased', 'More meetings are held')]
+    ])
+  },
+  {
+    id: 'elite-2', title: 'Inclusive Economic Growth', tier: SURVEY_TIERS.ELITE, unlockFee: 149, rewardPerQuestion: 130,
+    questions: questions('e2', [
+      ['Which investment would most expand decent work locally?', o('Skills linked to real jobs', 'Short-term cash assistance', 'More unpaid internships', 'Hiring from outside the area')],
+      ['What is the biggest barrier for women-owned businesses?', o('Access to affordable finance', 'Limited customer demand', 'Lack of interest', 'Too many training options')],
+      ['How can small enterprises reach new markets?', o('Digital tools and buyer connections', 'Higher fees', 'Less product information', 'Fewer transport options')],
+      ['What makes job training effective?', o('Practical learning with employer input', 'Long lectures only', 'Training without follow-up', 'One course for every learner')],
+      ['How should economic programmes measure inclusion?', o('Track who gains work and income', 'Count only total spending', 'Count events held', 'Measure social media reach')]
+    ])
+  },
+  {
+    id: 'elite-3', title: 'Responsible Data & Technology', tier: SURVEY_TIERS.ELITE, unlockFee: 149, rewardPerQuestion: 130,
+    questions: questions('e3', [
+      ['What should be required before a service collects personal data?', o('Clear consent and purpose', 'Collect first and explain later', 'Public disclosure of names', 'No limits on reuse')],
+      ['Who should review automated decisions affecting aid access?', o('Trained people with an appeal process', 'The software vendor only', 'No one if it is fast', 'Other automated tools only')],
+      ['How can organisations make digital services more inclusive?', o('Design with users with different needs', 'Require the newest phones', 'Offer online help only', 'Use one language')],
+      ['What is a good response to a data breach?', o('Notify affected people and limit harm', 'Hide it from users', 'Keep collecting data', 'Delete all support channels')],
+      ['How should new technology be introduced in a community programme?', o('Test transparently with community feedback', 'Deploy everywhere immediately', 'Avoid explaining how it works', 'Replace all existing support')]
+    ])
   }
 ];
 
 export const TIER_DETAILS = {
   [SURVEY_TIERS.FREE]: { label: 'Free', description: 'Start earning with open community surveys.', color: 'free' },
   [SURVEY_TIERS.PREMIUM]: { label: 'Premium', description: 'Unlock deeper research surveys.', color: 'premium' },
-  [SURVEY_TIERS.PREMIUM_PLUS]: { label: 'Premium Plus', description: 'Take part in advanced impact research.', color: 'plus' }
+  [SURVEY_TIERS.PREMIUM_PLUS]: { label: 'Premium Plus', description: 'Take part in advanced impact research.', color: 'plus' },
+  [SURVEY_TIERS.ELITE]: { label: 'Elite', description: 'Contribute to specialised research on long-term community impact.', color: 'elite' }
 };
