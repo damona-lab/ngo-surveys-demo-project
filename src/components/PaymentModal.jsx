@@ -1,4 +1,5 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ShieldCheck, ClipboardCheck, AlertCircle, Copy, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -32,7 +33,7 @@ export default function PaymentModal({ survey, onClose, onUnlock }) {
     });
   };
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <section className="modal payment-modal">
         <button className="icon-close" onClick={onClose} aria-label="Close"><X /></button>
@@ -64,6 +65,7 @@ export default function PaymentModal({ survey, onClose, onUnlock }) {
         {error && <p className="form-error"><AlertCircle size={15} />{error}</p>}
         <button className="primary-button full" disabled={loading} onClick={verify}>{loading ? 'Verifying…' : 'Verify payment & unlock'}</button>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
