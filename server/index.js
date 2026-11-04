@@ -2,11 +2,11 @@
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import nodemailer from 'nodemailer';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { connectDatabase, closeDatabase, ping, isDuplicateKeyError, isValidationError, inSession, runInTransaction } from './db.js';
-import { User, Survey, UserSurvey, UserAnswer, Withdrawal, PasswordReset, RefreshToken } from './models.js';
+import { User, Survey, UserSurvey, UserAnswer, Withdrawal, PasswordReset, RefreshToken, ActivityEvent, SiteSetting } from './models.js';
 import { hashPassword, verifyPassword, signToken, verifyToken, newResetToken } from './auth.js';
 import { SURVEY_SETS } from '../src/surveysData.js';
 
@@ -53,14 +53,29 @@ async function requireUser(req, res, next) {
   try {
     const claims = tokenFor(req);
     if (!claims) return res.status(401).json({ error: 'Please sign in.' });
-    const user = await User.findOne({ _id: claims.sub, status: 'active' }).select('name email balance total_earned').lean();
+    const user = await User.findOne({ _id: claims.sub, status: 'active' }).select('name email balance total_earned role').lean();
     if (!user) return res.status(401).json({ error: 'Please sign in.' });
     req.user = user; next();
   } catch { res.status(401).json({ error: 'Your session has expired. Please sign in again.' }); }
 }
 
+async function requireAdmin(req, res, next) {
+  try {
+    await requireUser(req, res, () => {
+      if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Administrator access required.' });
+      next();
+    });
+  } catch { res.status(401).json({ error: 'Please sign in.' }); }
+}
+
+function logActivity(type, user = null, details = {}) {
+  return ActivityEvent.create({ type, user_id: user?._id || null, email: user?.email || '', details }).catch(err => {
+    console.error('Activity log failed:', err.message);
+  });
+}
+
 function setSession(res, user) { res.cookie(cookieName, signToken(user), cookieOptions); }
-function publicUser(user) { return { id: String(user._id), name: user.name, email: user.email, phone: user.phone, balance: Number(user.balance), totalEarned: Number(user.total_earned) }; }
+function publicUser(user) { return { id: String(user._id), name: user.name, email: user.email, phone: user.phone, balance: Number(user.balance), totalEarned: Number(user.total_earned), role: user.role || 'user' }; }
 
 app.post('/api/auth/signup', async (req, res, next) => {
   try {
@@ -72,6 +87,7 @@ app.post('/api/auth/signup', async (req, res, next) => {
     if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 8 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 8â€“72 characters.' });
     const user = await User.create({ name, email, phone, password_hash: await hashPassword(password), balance: 0, total_earned: 0, status: 'active' });
     setSession(res, user);
+    await logActivity('account.created', user, { name });
     res.status(201).json({ user: publicUser(user) });
   } catch (err) {
     if (isDuplicateKeyError(err)) return res.status(409).json({ error: 'An account with this email already exists.' });
@@ -84,9 +100,9 @@ app.post('/api/auth/login', async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     // password_hash is not selected by default, so it is requested explicitly here.
-    const user = await User.findOne({ email, status: 'active' }).select('+password_hash').lean();
+    const user = await User.findOne({ email, status: 'active' }).select('+password_hash name email phone balance total_earned role').lean();
     if (!user || !(await verifyPassword(String(req.body.password || ''), user.password_hash))) return res.status(401).json({ error: 'Email or password is incorrect.' });
-    setSession(res, user); res.json({ user: publicUser(user) });
+    setSession(res, user); await logActivity('account.login', user); res.json({ user: publicUser(user) });
   } catch (err) { next(err); }
 });
 
@@ -108,6 +124,155 @@ app.put('/api/auth/profile', requireUser, async (req, res, next) => {
   }
 });
 app.get('/api/health', async (_req, res) => { try { await ping(); res.json({ ok: true }); } catch { res.status(503).json({ ok: false }); } });
+
+const allowedTiers = ['free', 'premium', 'premium_plus', 'elite'];
+const cleanSurvey = survey => ({
+  id: survey._id || survey.id,
+  title: survey.title,
+  description: survey.description || '',
+  tier: survey.tier,
+  unlockFee: Number(survey.unlock_fee ?? survey.unlockFee ?? 0),
+  rewardPerQuestion: Number(survey.reward_per_question ?? survey.rewardPerQuestion ?? 0),
+  questions: (survey.questions || []).map(q => ({ id: q.id, text: q.text, options: q.options || [] })),
+});
+const cleanSiteSettings = settings => ({
+  heroTitle: settings?.hero_title || 'Your voice can help shape impact.',
+  heroCopy: settings?.hero_copy || 'Explore community research surveys, record your opinions, and earn rewards for sharing your perspective.',
+  notice: settings?.notice || '',
+});
+
+app.get('/api/surveys', async (_req, res, next) => {
+  try {
+    const records = await Survey.find({ is_active: { $ne: false } }).sort({ _id: 1 }).lean();
+    res.json({ surveys: (records.length ? records : SURVEY_SETS).map(cleanSurvey) });
+  } catch (err) { next(err); }
+});
+app.get('/api/site-settings', async (_req, res, next) => {
+  try { res.json({ settings: cleanSiteSettings(await SiteSetting.findOne({ key: 'site' }).lean()) }); }
+  catch (err) { next(err); }
+});
+
+function parseSurvey(body = {}) {
+  const title = String(body.title || '').trim();
+  const description = String(body.description || '').trim();
+  const tier = String(body.tier || 'free');
+  const unlockFee = Number(body.unlockFee);
+  const rewardPerQuestion = Number(body.rewardPerQuestion);
+  const questions = Array.isArray(body.questions) ? body.questions.map((q, index) => ({
+    id: String(q.id || `q${index + 1}`).trim(),
+    sort_order: index + 1,
+    text: String(q.text || '').trim(),
+    options: Array.isArray(q.options) ? q.options.map(value => String(value).trim()).filter(Boolean) : [],
+  })) : [];
+  if (!title || title.length > 200 || description.length > 500 || !allowedTiers.includes(tier) || !Number.isFinite(unlockFee) || unlockFee < 0 || unlockFee > 100000 || !Number.isFinite(rewardPerQuestion) || rewardPerQuestion < 0 || rewardPerQuestion > 100000 || questions.length < 1 || questions.length > 100 || questions.some(q => !q.text || q.text.length > 2000 || q.options.length < 2 || q.options.length > 8 || q.options.some(o => o.length > 250))) {
+    return { error: 'Enter a valid title, tier, fee, reward, and at least one question with 2–8 answer options.' };
+  }
+  return { title, description, tier, unlock_fee: unlockFee, reward_per_question: rewardPerQuestion, questions, is_active: true };
+}
+
+app.get('/api/admin/overview', requireAdmin, async (_req, res, next) => {
+  try {
+    const [users, activeUsers, surveyCount, answerCount, withdrawalCount, pendingWithdrawals, recentEvents, byTier, answersBySurvey] = await Promise.all([
+      User.countDocuments(), User.countDocuments({ status: 'active' }), Survey.countDocuments({ is_active: { $ne: false } }), UserAnswer.countDocuments(), Withdrawal.countDocuments(), Withdrawal.countDocuments({ status: 'pending' }),
+      ActivityEvent.find().sort({ created_at: -1 }).limit(20).lean(),
+      Survey.aggregate([{ $match: { is_active: { $ne: false } } }, { $group: { _id: '$tier', count: { $sum: 1 } } }]),
+      UserAnswer.aggregate([{ $group: { _id: '$survey_id', answers: { $sum: 1 } } }, { $sort: { answers: -1 } }, { $limit: 10 }]),
+    ]);
+    const ids = answersBySurvey.map(row => row._id);
+    const titles = await Survey.find({ _id: { $in: ids } }).select('title').lean();
+    const titleById = Object.fromEntries(titles.map(row => [row._id, row.title]));
+    res.json({ analytics: { users, activeUsers, surveys: surveyCount, answers: answerCount, withdrawals: withdrawalCount, pendingWithdrawals, byTier, answersBySurvey: answersBySurvey.map(row => ({ surveyId: row._id, title: titleById[row._id] || row._id, answers: row.answers })) }, events: recentEvents });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/admin/surveys', requireAdmin, async (_req, res, next) => {
+  try { res.json({ surveys: (await Survey.find().sort({ _id: 1 }).lean()).map(row => ({ ...cleanSurvey(row), active: row.is_active !== false })) }); }
+  catch (err) { next(err); }
+});
+app.post('/api/admin/surveys', requireAdmin, async (req, res, next) => {
+  try {
+    const data = parseSurvey(req.body);
+    if (data.error) return res.status(400).json({ error: data.error });
+    const survey = await Survey.create({ _id: `admin-${randomUUID()}`, ...data });
+    await logActivity('survey.created', req.user, { surveyId: survey._id, title: survey.title });
+    res.status(201).json({ survey: { ...cleanSurvey(survey.toObject()), active: true } });
+  } catch (err) { if (err.code === 11000) return res.status(409).json({ error: 'That survey ID is already in use.' }); next(err); }
+});
+app.put('/api/admin/surveys/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const data = parseSurvey(req.body);
+    if (data.error) return res.status(400).json({ error: data.error });
+    const survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: data }, { new: true, runValidators: true }).lean();
+    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    await logActivity('survey.updated', req.user, { surveyId: survey._id, title: survey.title });
+    res.json({ survey: { ...cleanSurvey(survey), active: survey.is_active !== false } });
+  } catch (err) { next(err); }
+});
+app.delete('/api/admin/surveys/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: { is_active: false } }, { new: true }).lean();
+    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    await logActivity('survey.archived', req.user, { surveyId: survey._id, title: survey.title });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/admin/users', requireAdmin, async (_req, res, next) => {
+  try {
+    const users = await User.find().select('name email phone role status balance total_earned created_at').sort({ created_at: -1 }).limit(250).lean();
+    res.json({ users: users.map(user => ({ id: String(user._id), name: user.name, email: user.email, phone: user.phone, role: user.role || 'user', status: user.status, balance: Number(user.balance), totalEarned: Number(user.total_earned), joinedAt: user.created_at })) });
+  } catch (err) { next(err); }
+});
+app.patch('/api/admin/users/:id/status', requireAdmin, async (req, res, next) => {
+  try {
+    const status = String(req.body.status || '');
+    if (!['active', 'suspended'].includes(status)) return res.status(400).json({ error: 'Choose active or suspended.' });
+    if (String(req.user._id) === req.params.id) return res.status(400).json({ error: 'You cannot change your own account status.' });
+    const user = await User.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true }).select('name email status').lean();
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    await logActivity(`user.${status}`, req.user, { targetEmail: user.email });
+    res.json({ user });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/admin/withdrawals', requireAdmin, async (_req, res, next) => {
+  try {
+    const rows = await Withdrawal.find().sort({ created_at: -1 }).limit(250).populate('user_id', 'name email').lean();
+    res.json({ withdrawals: rows.map(row => ({ id: String(row._id), name: row.recipient_name, phone: row.phone, amount: Number(row.amount), status: row.status, createdAt: row.created_at, user: row.user_id ? { name: row.user_id.name, email: row.user_id.email } : null })) });
+  } catch (err) { next(err); }
+});
+app.patch('/api/admin/withdrawals/:id/status', requireAdmin, async (req, res, next) => {
+  try {
+    const status = String(req.body.status || '');
+    if (!['processing', 'paid', 'failed'].includes(status)) return res.status(400).json({ error: 'Choose processing, paid, or failed.' });
+    const withdrawal = await Withdrawal.findById(req.params.id);
+    if (!withdrawal) return res.status(404).json({ error: 'Withdrawal not found.' });
+    const previous = withdrawal.status;
+    if (previous === 'paid' || previous === 'failed') return res.status(409).json({ error: 'This withdrawal is already finalized.' });
+    withdrawal.status = status;
+    if (status === 'paid' || status === 'failed') withdrawal.processed_at = new Date();
+    await withdrawal.save();
+    if (status === 'failed') await User.updateOne({ _id: withdrawal.user_id }, { $inc: { balance: withdrawal.amount } });
+    await logActivity(`withdrawal.${status}`, req.user, { withdrawalId: String(withdrawal._id), amount: Number(withdrawal.amount) });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/admin/events', requireAdmin, async (_req, res, next) => {
+  try { res.json({ events: await ActivityEvent.find().sort({ created_at: -1 }).limit(250).lean() }); }
+  catch (err) { next(err); }
+});
+app.put('/api/admin/site-settings', requireAdmin, async (req, res, next) => {
+  try {
+    const heroTitle = String(req.body.heroTitle || '').trim();
+    const heroCopy = String(req.body.heroCopy || '').trim();
+    const notice = String(req.body.notice || '').trim();
+    if (!heroTitle || heroTitle.length > 180 || !heroCopy || heroCopy.length > 500 || notice.length > 500) return res.status(400).json({ error: 'Check the text lengths and include a headline and description.' });
+    const settings = await SiteSetting.findOneAndUpdate({ key: 'site' }, { $set: { hero_title: heroTitle, hero_copy: heroCopy, notice } }, { new: true, upsert: true, runValidators: true }).lean();
+    await logActivity('site.updated', req.user, {});
+    res.json({ settings: cleanSiteSettings(settings) });
+  } catch (err) { next(err); }
+});
 
 // Reused SMTP transport for password reset email, created on first use.
 let mailTransportInstance = null;
@@ -190,7 +355,8 @@ app.get('/api/state', requireUser, async (req, res, next) => {
 app.post('/api/answers', requireUser, async (req, res, next) => {
   try {
     const { surveyId, questionId, answerIndex } = req.body;
-    const survey = SURVEY_SETS.find(s => s.id === surveyId); const question = survey?.questions.find(q => q.id === questionId);
+    const storedSurvey = await Survey.findOne({ _id: surveyId, is_active: { $ne: false } }).lean();
+    const survey = storedSurvey ? cleanSurvey(storedSurvey) : SURVEY_SETS.find(s => s.id === surveyId); const question = survey?.questions.find(q => q.id === questionId);
     if (!question || !Number.isInteger(answerIndex) || answerIndex < 0 || answerIndex >= question.options.length) return res.status(400).json({ error: 'Invalid survey answer.' });
     const userId = req.user._id;
     const outcome = await runInTransaction(async session => {
@@ -220,13 +386,15 @@ app.post('/api/answers', requireUser, async (req, res, next) => {
     });
     if (outcome === 'duplicate') return res.status(409).json({ error: 'This question was already answered.' });
     if (outcome === 'locked') return res.status(403).json({ error: 'Unlock this survey first.' });
+    await logActivity('answer.submitted', req.user, { surveyId, questionId });
     res.json({ reward: survey.rewardPerQuestion });
   } catch (err) { next(err); }
 });
 
 app.post('/api/surveys/:id/unlock', requireUser, async (req, res, next) => {
   try {
-    const survey = SURVEY_SETS.find(s => s.id === req.params.id);
+    const storedSurvey = await Survey.findOne({ _id: req.params.id, is_active: { $ne: false } }).lean();
+    const survey = storedSurvey ? cleanSurvey(storedSurvey) : SURVEY_SETS.find(s => s.id === req.params.id);
     if (!survey) return res.status(404).json({ error: 'Survey not found.' });
     // Payment verification is a separate provider integration; never trust pasted SMS text as proof of payment.
     if (survey.unlockFee > 0) return res.status(501).json({ error: 'Paid survey unlocks require a verified payment provider.' });
@@ -235,6 +403,7 @@ app.post('/api/surveys/:id/unlock', requireUser, async (req, res, next) => {
       { $set: { unlocked: true }, $setOnInsert: { created_at: new Date(), completed_at: null } },
       { upsert: true },
     );
+    await logActivity('survey.unlocked', req.user, { surveyId: survey.id });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });
@@ -258,6 +427,7 @@ app.post('/api/withdrawals', requireUser, async (req, res, next) => {
       return 'ok';
     });
     if (outcome === 'insufficient') return res.status(400).json({ error: 'Insufficient balance.' });
+    await logActivity('withdrawal.requested', req.user, { amount, phone });
     res.status(201).json({ ok: true });
   } catch (err) {
     if (isValidationError(err)) return res.status(400).json({ error: 'Enter valid payout details and at least KSh 500.' });

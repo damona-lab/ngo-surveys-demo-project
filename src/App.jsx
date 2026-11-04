@@ -9,6 +9,9 @@ import SurveyRunner from './components/SurveyRunner';
 import WithdrawModal from './components/WithdrawModal';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
+import API from './api';
+import AdminDashboard from './components/AdminDashboard';
+import AdminLogin from './components/AdminLogin';
 
 export default function App() {
   const { user, state, loading, answer, unlock, withdraw, logout } = useAuth();
@@ -18,8 +21,14 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [surveys, setSurveys] = useState(SURVEY_SETS);
+  const [siteSettings, setSiteSettings] = useState({ heroTitle: 'Your voice can help shape impact.', heroCopy: 'Explore community research surveys, record your opinions, and earn rewards for sharing your perspective.', notice: '' });
 
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2600); return () => clearTimeout(t); }, [toast]);
+  useEffect(() => {
+    API.surveys().then(data => { if (data.surveys?.length) setSurveys(data.surveys); }).catch(() => {});
+    API.siteSettings().then(data => setSiteSettings(data.settings)).catch(() => {});
+  }, []);
 
   const answered = useMemo(() => Object.values(state.surveys).reduce((sum, item) => sum + (item.completedQuestions?.length || 0), 0), [state.surveys]);
 
@@ -41,9 +50,15 @@ export default function App() {
   };
 
   const tierOrder = [SURVEY_TIERS.FREE, SURVEY_TIERS.PREMIUM, SURVEY_TIERS.PREMIUM_PLUS, SURVEY_TIERS.ELITE];
+  const isAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
 
   if (loading) return <div className="loading-screen"><div className="spinner" /> Loading…</div>;
 
+  if (isAdminRoute) {
+    if (!user) return <AdminLogin />;
+    if (user.role !== 'admin') return <div className="admin-denied"><h1>Administrator access required</h1><p>This account does not have admin privileges.</p><button className="primary-button" onClick={() => logout()}>Sign out</button></div>;
+    return <AdminDashboard user={user} onLogout={logout} />;
+  }
   if (!user) return <AuthModal open onClose={() => {}} />;
 
   return (
@@ -61,8 +76,8 @@ export default function App() {
       <main>
         <section className="hero">
           <div className="hero-copy">
-            <h1>Your voice can help shape <em>impact.</em></h1>
-            <p>Explore community research surveys, record your opinions, and earn rewards for sharing your perspective.</p>
+            <h1>{siteSettings.heroTitle}</h1>
+            <p>{siteSettings.heroCopy}</p>
             <div className="hero-actions">
               <button className="primary-button" onClick={() => document.getElementById('free')?.scrollIntoView({ behavior: 'smooth' })}>Explore surveys <Sparkles size={18} /></button>
               <button className="text-button" onClick={() => setWithdrawOpen(true)}>Request payout <ArrowDownToLine size={17} /></button>
@@ -76,9 +91,10 @@ export default function App() {
             <small>Available rewards</small>
           </div>
         </section>
+        {siteSettings.notice && <section className="notice"><div><strong>Notice</strong><p>{siteSettings.notice}</p></div></section>}
         <section className="stats">
-          <div><span>Survey sets</span><strong>{SURVEY_SETS.length}</strong><small>Across four research tiers</small></div>
-          <div><span>Questions</span><strong>{SURVEY_SETS.reduce((sum, survey) => sum + survey.questions.length, 0)}</strong><small>Each answer is saved to the database</small></div>
+          <div><span>Survey sets</span><strong>{surveys.length}</strong><small>Across four research tiers</small></div>
+          <div><span>Questions</span><strong>{surveys.reduce((sum, survey) => sum + survey.questions.length, 0)}</strong><small>Each answer is saved to the database</small></div>
           <div><span>Total rewards</span><strong>KSh {state.totalEarned.toFixed(2)}</strong><small>Earned from completed surveys</small></div>
         </section>
         {tierOrder.map(tier => (
@@ -89,10 +105,10 @@ export default function App() {
                 <h2>{tier === 'free' ? 'Start with community insight' : tier === 'premium' ? 'Explore focused research' : tier === SURVEY_TIERS.PREMIUM_PLUS ? 'Contribute to global thinking' : 'Explore specialised research'}</h2>
                 <p>{TIER_DETAILS[tier].description}</p>
               </div>
-              {tier !== 'free' && <span className="unlock-note">Unlock fee: KSh {SURVEY_SETS.find(s => s.tier === tier).unlockFee}</span>}
+              {tier !== 'free' && <span className="unlock-note">Unlock fee: KSh {surveys.find(s => s.tier === tier)?.unlockFee ?? 0}</span>}
             </div>
             <div className="survey-grid">
-              {SURVEY_SETS.filter(s => s.tier === tier).map(survey => (
+              {surveys.filter(s => s.tier === tier).map(survey => (
                 <SurveyCard key={survey.id} survey={survey} status={state.surveys[survey.id]} onOpen={openSurvey} />
               ))}
             </div>

@@ -9,7 +9,8 @@
     "build": "node scripts/build.mjs",
     "db:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-db.ps1",
     "db:setup": "node --env-file-if-exists=.env scripts/mongo-setup.js",
-    "db:seed": "node --env-file-if-exists=.env server/seed.js"
+    "db:seed": "node --env-file-if-exists=.env server/seed.js",
+    "admin:create": "node --env-file-if-exists=.env scripts/create-admin.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

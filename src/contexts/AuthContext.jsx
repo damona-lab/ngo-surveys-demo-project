@@ -38,6 +38,7 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     const s = await API.state();
     setState(s.state);
+    return data.user;
   }
 
   async function login(email, password) {
@@ -46,6 +47,7 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     const s = await API.state();
     setState(s.state);
+    return data.user;
   }
 
    async function updateProfile(data) {

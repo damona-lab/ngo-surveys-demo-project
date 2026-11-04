@@ -21,6 +21,7 @@ const userSchema = new Schema({
   phone: { type: String, required: true, trim: true, match: PHONE_PATTERN },
   // bcrypt hashes never leave the database unless a query asks for them explicitly.
   password_hash: { type: String, required: true, select: false },
+  role: { type: String, enum: ['user', 'admin'], default: 'user', index: true },
   balance: money(),
   total_earned: money(),
   status: { type: String, enum: ['active', 'suspended'], default: 'active', index: true },
@@ -42,10 +43,12 @@ const surveySchema = new Schema({
   // The survey id is the natural key used by the API, so it is the document _id.
   _id: { type: String, required: true, trim: true, maxlength: 40 },
   title: { type: String, required: true, trim: true, maxlength: 200 },
+  description: { type: String, trim: true, maxlength: 500, default: '' },
   tier: { type: String, required: true, enum: ['free', 'premium', 'premium_plus', 'elite'], index: true },
   unlock_fee: money(),
   reward_per_question: money(),
   questions: { type: [questionSchema], default: [] },
+  is_active: { type: Boolean, default: true, index: true },
   created_at: { type: Date, default: Date.now },
 }, { collection: 'surveys', versionKey: false });
 
@@ -98,6 +101,22 @@ const refreshTokenSchema = new Schema({
   created_at: { type: Date, default: Date.now },
 }, { collection: 'refresh_tokens', versionKey: false });
 
+const activitySchema = new Schema({
+  type: { type: String, required: true, trim: true, maxlength: 80, index: true },
+  user_id: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
+  email: { type: String, trim: true, lowercase: true, maxlength: 255, default: '' },
+  details: { type: Schema.Types.Mixed, default: {} },
+  created_at: { type: Date, default: Date.now, index: true },
+}, { collection: 'activity_events', versionKey: false });
+activitySchema.index({ created_at: -1 });
+
+const siteSettingsSchema = new Schema({
+  key: { type: String, default: 'site', unique: true },
+  hero_title: { type: String, trim: true, maxlength: 180, default: 'Your voice can help shape impact.' },
+  hero_copy: { type: String, trim: true, maxlength: 500, default: 'Explore community research surveys, record your opinions, and earn rewards for sharing your perspective.' },
+  notice: { type: String, trim: true, maxlength: 500, default: '' },
+}, { collection: 'site_settings', versionKey: false });
+
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
 export const Survey = mongoose.models.Survey || mongoose.model('Survey', surveySchema);
 export const UserSurvey = mongoose.models.UserSurvey || mongoose.model('UserSurvey', userSurveySchema);
@@ -105,5 +124,7 @@ export const UserAnswer = mongoose.models.UserAnswer || mongoose.model('UserAnsw
 export const Withdrawal = mongoose.models.Withdrawal || mongoose.model('Withdrawal', withdrawalSchema);
 export const PasswordReset = mongoose.models.PasswordReset || mongoose.model('PasswordReset', passwordResetSchema);
 export const RefreshToken = mongoose.models.RefreshToken || mongoose.model('RefreshToken', refreshTokenSchema);
+export const ActivityEvent = mongoose.models.ActivityEvent || mongoose.model('ActivityEvent', activitySchema);
+export const SiteSetting = mongoose.models.SiteSetting || mongoose.model('SiteSetting', siteSettingsSchema);
 
-export const MODELS = [User, Survey, UserSurvey, UserAnswer, Withdrawal, PasswordReset, RefreshToken];
+export const MODELS = [User, Survey, UserSurvey, UserAnswer, Withdrawal, PasswordReset, RefreshToken, ActivityEvent, SiteSetting];
