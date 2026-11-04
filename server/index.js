@@ -245,15 +245,21 @@ app.patch('/api/admin/withdrawals/:id/status', requireAdmin, async (req, res, ne
   try {
     const status = String(req.body.status || '');
     if (!['processing', 'paid', 'failed'].includes(status)) return res.status(400).json({ error: 'Choose processing, paid, or failed.' });
-    const withdrawal = await Withdrawal.findById(req.params.id);
-    if (!withdrawal) return res.status(404).json({ error: 'Withdrawal not found.' });
-    const previous = withdrawal.status;
-    if (previous === 'paid' || previous === 'failed') return res.status(409).json({ error: 'This withdrawal is already finalized.' });
-    withdrawal.status = status;
-    if (status === 'paid' || status === 'failed') withdrawal.processed_at = new Date();
-    await withdrawal.save();
-    if (status === 'failed') await User.updateOne({ _id: withdrawal.user_id }, { $inc: { balance: withdrawal.amount } });
-    await logActivity(`withdrawal.${status}`, req.user, { withdrawalId: String(withdrawal._id), amount: Number(withdrawal.amount) });
+    const outcome = await runInTransaction(async session => {
+      const withdrawal = await inSession(Withdrawal.findOneAndUpdate(
+        { _id: req.params.id, status: { $in: ['pending', 'processing'] } },
+        { $set: { status, processed_at: ['paid', 'failed'].includes(status) ? new Date() : null } },
+        { new: true },
+      ), session).lean();
+      if (!withdrawal) return null;
+      if (status === 'failed') await inSession(User.updateOne({ _id: withdrawal.user_id }, { $inc: { balance: withdrawal.amount } }), session).exec();
+      return withdrawal;
+    });
+    if (!outcome) {
+      if (!await Withdrawal.exists({ _id: req.params.id })) return res.status(404).json({ error: 'Withdrawal not found.' });
+      return res.status(409).json({ error: 'This withdrawal is already finalized.' });
+    }
+    await logActivity(`withdrawal.${status}`, req.user, { withdrawalId: String(outcome._id), amount: Number(outcome.amount) });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

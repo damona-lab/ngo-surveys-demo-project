@@ -36,6 +36,18 @@ NGO Surveys is a browser survey dashboard with an Express API and MongoDB persis
 
    Visit `http://localhost:3000`.
 
+## Admin console
+
+The protected management console is available at `http://localhost:3000/admin`. Create the first administrator from a trusted local environment by setting `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PHONE`, and a unique `ADMIN_PASSWORD` of at least 12 characters in `.env`, then run:
+
+```sh
+npm run admin:create
+npm run db:seed
+npm run build
+```
+
+Sign in at `/admin` with the email and password you set. There is no shared default admin password. The console includes site analytics, survey creation/editing/archive, account status controls, withdrawal processing, activity history, and editable homepage content. Paid survey unlocks still require server-side payment provider verification.
+
 `npm run build` compiles the React/JSX sources under `src/` into the browser bundle in
 `dist/` (`dist/index.html`, `dist/assets/index.js`, `dist/assets/index.css`) using
 esbuild — a compiler/bundler only, with no dev server and no Vite. `express.static`
