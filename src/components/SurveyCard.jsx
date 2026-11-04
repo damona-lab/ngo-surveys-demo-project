@@ -8,7 +8,7 @@ export default function SurveyCard({ survey, status, onOpen }) {
   const locked = survey.unlockFee > 0 && !status?.unlocked;
   return <article className={`survey-card ${details.color} ${isCompleted ? 'is-complete' : ''}`}>
     <div className="card-top"><span className={`tier-badge ${details.color}`}>{details.label}</span>{isCompleted && <span className="completed-tag"><CheckCircle2 size={14} /> Completed</span>}</div>
-    <h3>{survey.title}</h3><p>{details.description}</p>
+    <h3>{survey.title}</h3><p>{survey.description || details.description}</p>
     <div className="reward-line"><Coins size={17} /><span>KSh {survey.rewardPerQuestion.toFixed(2)} <small>per question</small></span></div>
     <div className="card-footer"><span>{completed}/{survey.questions.length} answered</span><button className={locked ? 'card-action locked' : 'card-action'} onClick={() => onOpen(survey)}>{locked ? <><LockKeyhole size={16} /> Unlock · KSh {survey.unlockFee}</> : isCompleted ? <><CheckCircle2 size={16} /> Review</> : <><Play size={16} /> {completed ? 'Continue' : 'Start survey'}</>}</button></div>
     <div className="progress-track"><span style={{ width: `${(completed / survey.questions.length) * 100}%` }} /></div>

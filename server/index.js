@@ -114,7 +114,7 @@ app.put('/api/auth/profile', requireUser, async (req, res, next) => {
     const email = String(req.body.email || '').trim().toLowerCase();
     const phone = String(req.body.phone || '').replace(/\s/g, '');
     if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone)) return res.status(400).json({ error: 'Enter valid name, email, and phone.' });
-    const updated = await User.findOneAndUpdate({ _id: req.user._id, status: 'active' }, { $set: { name, email, phone } }, { new: true, runValidators: true }).select('name email balance total_earned').lean();
+    const updated = await User.findOneAndUpdate({ _id: req.user._id, status: 'active' }, { $set: { name, email, phone } }, { new: true, runValidators: true }).select('name email phone balance total_earned role').lean();
     if (!updated) return res.status(404).json({ error: 'User not found.' });
     res.json({ user: publicUser(updated) });
   } catch (err) {
