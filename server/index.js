@@ -172,16 +172,39 @@ function parseSurvey(body = {}) {
 
 app.get('/api/admin/overview', requireAdmin, async (_req, res, next) => {
   try {
-    const [users, activeUsers, surveyCount, answerCount, withdrawalCount, pendingWithdrawals, recentEvents, byTier, answersBySurvey] = await Promise.all([
+    const since = new Date(); since.setDate(since.getDate() - 29); since.setHours(0, 0, 0, 0);
+    const dayKey = '%Y-%m-%d';
+    const [users, activeUsers, surveyCount, answerCount, withdrawalCount, pendingWithdrawals, recentEvents, byTier, answersBySurvey, activityByDay, signupsByDay, withdrawalsByStatus] = await Promise.all([
       User.countDocuments(), User.countDocuments({ status: 'active' }), Survey.countDocuments({ is_active: { $ne: false } }), UserAnswer.countDocuments(), Withdrawal.countDocuments(), Withdrawal.countDocuments({ status: 'pending' }),
       ActivityEvent.find().sort({ created_at: -1 }).limit(20).lean(),
       Survey.aggregate([{ $match: { is_active: { $ne: false } } }, { $group: { _id: '$tier', count: { $sum: 1 } } }]),
       UserAnswer.aggregate([{ $group: { _id: '$survey_id', answers: { $sum: 1 } } }, { $sort: { answers: -1 } }, { $limit: 10 }]),
+      ActivityEvent.aggregate([
+        { $match: { created_at: { $gte: since } } },
+        { $group: { _id: { $dateToString: { format: dayKey, date: '$created_at' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      User.aggregate([
+        { $match: { created_at: { $gte: since } } },
+        { $group: { _id: { $dateToString: { format: dayKey, date: '$created_at' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      Withdrawal.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, amount: { $sum: '$amount' } } }]),
     ]);
     const ids = answersBySurvey.map(row => row._id);
     const titles = await Survey.find({ _id: { $in: ids } }).select('title').lean();
     const titleById = Object.fromEntries(titles.map(row => [row._id, row.title]));
-    res.json({ analytics: { users, activeUsers, surveys: surveyCount, answers: answerCount, withdrawals: withdrawalCount, pendingWithdrawals, byTier, answersBySurvey: answersBySurvey.map(row => ({ surveyId: row._id, title: titleById[row._id] || row._id, answers: row.answers })) }, events: recentEvents });
+    res.json({
+      analytics: {
+        users, activeUsers, surveys: surveyCount, answers: answerCount, withdrawals: withdrawalCount, pendingWithdrawals,
+        byTier,
+        answersBySurvey: answersBySurvey.map(row => ({ surveyId: row._id, title: titleById[row._id] || row._id, answers: row.answers })),
+        activityByDay: activityByDay.map(r => ({ day: r._id, count: r.count })),
+        signupsByDay: signupsByDay.map(r => ({ day: r._id, count: r.count })),
+        withdrawalsByStatus: withdrawalsByStatus.map(r => ({ status: r._id || 'unknown', count: r.count, amount: Number(r.amount || 0) })),
+      },
+      events: recentEvents,
+    });
   } catch (err) { next(err); }
 });
 
@@ -213,6 +236,27 @@ app.delete('/api/admin/surveys/:id', requireAdmin, async (req, res, next) => {
     const survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: { is_active: false } }, { new: true }).lean();
     if (!survey) return res.status(404).json({ error: 'Survey not found.' });
     await logActivity('survey.archived', req.user, { surveyId: survey._id, title: survey.title });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+app.patch('/api/admin/surveys/:id/restore', requireAdmin, async (req, res, next) => {
+  try {
+    const survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: { is_active: true } }, { new: true }).lean();
+    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    await logActivity('survey.restored', req.user, { surveyId: survey._id, title: survey.title });
+    res.json({ survey: { ...cleanSurvey(survey), active: true } });
+  } catch (err) { next(err); }
+});
+app.delete('/api/admin/surveys/:id/permanent', requireAdmin, async (req, res, next) => {
+  try {
+    const survey = await Survey.findById(req.params.id).lean();
+    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    await runInTransaction(async session => {
+      await inSession(Survey.deleteOne({ _id: req.params.id }), session).exec();
+      await inSession(UserSurvey.deleteMany({ survey_id: req.params.id }), session).exec();
+      await inSession(UserAnswer.deleteMany({ survey_id: req.params.id }), session).exec();
+    });
+    await logActivity('survey.deleted', req.user, { surveyId: req.params.id, title: survey.title });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

@@ -29,6 +29,8 @@ const API = (base => {
     createSurvey(data) { return this.post('/admin/surveys', data); },
     updateSurvey(id, data) { return this.request(`/admin/surveys/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }); },
     archiveSurvey(id) { return this.request(`/admin/surveys/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
+    restoreSurvey(id) { return this.request(`/admin/surveys/${encodeURIComponent(id)}/restore`, { method: 'PATCH' }); },
+    deleteSurvey(id) { return this.request(`/admin/surveys/${encodeURIComponent(id)}/permanent`, { method: 'DELETE' }); },
     adminUsers() { return this.get('/admin/users'); },
     setUserStatus(id, status) { return this.request(`/admin/users/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
     adminWithdrawals() { return this.get('/admin/withdrawals'); },
