@@ -209,7 +209,12 @@ app.get('/api/admin/overview', requireAdmin, async (_req, res, next) => {
 });
 
 app.get('/api/admin/surveys', requireAdmin, async (_req, res, next) => {
-  try { res.json({ surveys: (await Survey.find().sort({ _id: 1 }).lean()).map(row => ({ ...cleanSurvey(row), active: row.is_active !== false })) }); }
+  try {
+    const rows = await Survey.find().sort({ _id: 1 }).lean();
+    const byId = new Map(rows.map(r => [r._id, { ...cleanSurvey(r), active: r.is_active !== false }]));
+    for (const s of SURVEY_SETS) if (!byId.has(s.id)) byId.set(s.id, { ...cleanSurvey(s), active: true, builtin: true });
+    res.json({ surveys: [...byId.values()].sort((a, b) => String(a.id).localeCompare(String(b.id))) });
+  }
   catch (err) { next(err); }
 });
 app.post('/api/admin/surveys', requireAdmin, async (req, res, next) => {
@@ -225,16 +230,24 @@ app.put('/api/admin/surveys/:id', requireAdmin, async (req, res, next) => {
   try {
     const data = parseSurvey(req.body);
     if (data.error) return res.status(400).json({ error: data.error });
-    const survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: data }, { new: true, runValidators: true }).lean();
-    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    let survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: data }, { new: true, runValidators: true }).lean();
+    if (!survey) {
+      const seed = SURVEY_SETS.find(s => s.id === req.params.id);
+      if (!seed) return res.status(404).json({ error: 'Survey not found.' });
+      survey = (await Survey.create({ _id: req.params.id, ...data })).toObject();
+    }
     await logActivity('survey.updated', req.user, { surveyId: survey._id, title: survey.title });
     res.json({ survey: { ...cleanSurvey(survey), active: survey.is_active !== false } });
   } catch (err) { next(err); }
 });
 app.delete('/api/admin/surveys/:id', requireAdmin, async (req, res, next) => {
   try {
-    const survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: { is_active: false } }, { new: true }).lean();
-    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    let survey = await Survey.findOneAndUpdate({ _id: req.params.id }, { $set: { is_active: false } }, { new: true }).lean();
+    if (!survey) {
+      const seed = SURVEY_SETS.find(s => s.id === req.params.id);
+      if (!seed) return res.status(404).json({ error: 'Survey not found.' });
+      survey = (await Survey.create({ _id: seed.id, title: seed.title, description: seed.description || '', tier: seed.tier, unlock_fee: seed.unlockFee, reward_per_question: seed.rewardPerQuestion, questions: seed.questions.map((q, i) => ({ id: q.id, sort_order: i + 1, text: q.text, options: q.options })), is_active: false })).toObject();
+    }
     await logActivity('survey.archived', req.user, { surveyId: survey._id, title: survey.title });
     res.json({ ok: true });
   } catch (err) { next(err); }
@@ -249,14 +262,16 @@ app.patch('/api/admin/surveys/:id/restore', requireAdmin, async (req, res, next)
 });
 app.delete('/api/admin/surveys/:id/permanent', requireAdmin, async (req, res, next) => {
   try {
-    const survey = await Survey.findById(req.params.id).lean();
-    if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+    const existing = await Survey.findById(req.params.id).lean();
+    const seed = SURVEY_SETS.find(s => s.id === req.params.id);
+    if (!existing && !seed) return res.status(404).json({ error: 'Survey not found.' });
+    if (seed && !existing) return res.status(400).json({ error: 'Built-in surveys cannot be permanently deleted. Archive it to hide it from the website.' });
     await runInTransaction(async session => {
       await inSession(Survey.deleteOne({ _id: req.params.id }), session).exec();
       await inSession(UserSurvey.deleteMany({ survey_id: req.params.id }), session).exec();
       await inSession(UserAnswer.deleteMany({ survey_id: req.params.id }), session).exec();
     });
-    await logActivity('survey.deleted', req.user, { surveyId: req.params.id, title: survey.title });
+    await logActivity('survey.deleted', req.user, { surveyId: req.params.id, title: (existing || seed).title });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

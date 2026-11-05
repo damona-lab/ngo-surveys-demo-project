@@ -144,7 +144,7 @@ export default function App() {
                     {survey.active === false && <span className="archived-pill"><Archive size={13} /> Archived</span>}
                     <button onClick={() => beginEdit(survey)}><Pencil size={14} /> Edit</button>
                     {survey.active === false
-                      ? <><button onClick={() => runSurveyAction(() => API.restoreSurvey(survey.id), 'Survey restored')}><RotateCcw size={14} /> Restore</button><button className="danger" onClick={() => { if (window.confirm(`Permanently delete “${survey.title}”? This removes it and its user progress/answers.`)) runSurveyAction(() => API.deleteSurvey(survey.id), 'Survey deleted'); }}><Trash2 size={14} /> Delete</button></>
+                      ? <><button onClick={() => runSurveyAction(() => API.restoreSurvey(survey.id), 'Survey restored')}><RotateCcw size={14} /> Restore</button>{!survey.builtin && <button className="danger" onClick={() => { if (window.confirm(`Permanently delete “${survey.title}”? This removes it and its user progress/answers.`)) runSurveyAction(() => API.deleteSurvey(survey.id), 'Survey deleted'); }}><Trash2 size={14} /> Delete</button>}</>
                       : <button className="danger" onClick={() => { if (window.confirm(`Archive “${survey.title}”? It will be hidden from regular users.`)) runSurveyAction(() => API.archiveSurvey(survey.id), 'Survey archived'); }}><Archive size={14} /> Archive</button>}
                   </div>}
                 </div>
