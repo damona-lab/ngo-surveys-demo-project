@@ -51,10 +51,11 @@ export default function App() {
 
   const tierOrder = [SURVEY_TIERS.FREE, SURVEY_TIERS.PREMIUM, SURVEY_TIERS.PREMIUM_PLUS, SURVEY_TIERS.ELITE];
   const isAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
+  const isPublicPreview = window.location.search.includes('preview=1');
 
   if (loading) return <div className="loading-screen"><div className="spinner" /> Loading…</div>;
 
-  if (isAdminRoute) {
+  if (isAdminRoute || (user?.role === 'admin' && !isPublicPreview)) {
     if (!user) return <AdminLogin />;
     if (user.role !== 'admin') return <div className="admin-denied"><h1>Administrator access required</h1><p>This account does not have admin privileges.</p><button className="primary-button" onClick={() => logout()}>Sign out</button></div>;
     return <AdminDashboard user={user} onLogout={logout} />;

@@ -35,7 +35,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: '20kb' }));
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false, handler: (_req, res) => res.status(429).json({ error: 'Too many requests. Please try again later.' }) }));
 
 function tokenFor(req) {
   const token = req.cookies?.[cookieName] || req.get('authorization')?.replace(/^Bearer\s+/i, '');

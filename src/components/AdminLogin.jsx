@@ -13,7 +13,8 @@ export default function AdminLogin() {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const user = await login(email, password);
-      if (user.role !== 'admin') { await logout(); setError('This account does not have administrator access.'); }
+      if (user.role !== 'admin') { await logout(); setError('This account does not have administrator access.'); return; }
+      window.location.href = '/admin';
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
   };

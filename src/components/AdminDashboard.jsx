@@ -64,7 +64,7 @@ export default function AdminDashboard({ user, onLogout }) {
       <div className="admin-profile"><span className="admin-avatar">{user.name?.slice(0, 1).toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.email}</small></span><button title="Sign out" onClick={onLogout}><LogOut size={17} /></button></div>
     </aside>
     <main className="admin-main">
-      <header className="admin-header"><div><span className="admin-kicker">MANAGEMENT CONSOLE</span><h1>{tabs.find(item => item[0] === tab)?.[1]}</h1></div><a href="/" target="_blank" rel="noreferrer">View website ↗</a></header>
+      <header className="admin-header"><div><span className="admin-kicker">MANAGEMENT CONSOLE</span><h1>{tabs.find(item => item[0] === tab)?.[1]}</h1></div><a href="/?preview=1" target="_blank" rel="noreferrer">View website ↗</a></header>
       {error && <div className="admin-banner error">{error}</div>}{notice && <div className="admin-banner success">{notice}</div>}
 
       {tab === 'overview' && <Overview data={overview} />}

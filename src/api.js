@@ -8,7 +8,10 @@ const API = (base => {
         ...opts,
       });
       const text = await res.text();
-      const data = text ? JSON.parse(text) : null;
+      let data = null;
+      if (text) {
+        try { data = JSON.parse(text); } catch { data = null; }
+      }
       if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
       return data;
     },
@@ -24,14 +27,14 @@ const API = (base => {
     adminOverview() { return this.get('/admin/overview'); },
     adminSurveys() { return this.get('/admin/surveys'); },
     createSurvey(data) { return this.post('/admin/surveys', data); },
-    updateSurvey(id, data) { return this.request(`/api/admin/surveys/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }); },
-    archiveSurvey(id) { return this.request(`/api/admin/surveys/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
+    updateSurvey(id, data) { return this.request(`/admin/surveys/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }); },
+    archiveSurvey(id) { return this.request(`/admin/surveys/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
     adminUsers() { return this.get('/admin/users'); },
-    setUserStatus(id, status) { return this.request(`/api/admin/users/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
+    setUserStatus(id, status) { return this.request(`/admin/users/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
     adminWithdrawals() { return this.get('/admin/withdrawals'); },
-    setWithdrawalStatus(id, status) { return this.request(`/api/admin/withdrawals/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
+    setWithdrawalStatus(id, status) { return this.request(`/admin/withdrawals/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
     adminEvents() { return this.get('/admin/events'); },
-    saveSiteSettings(settings) { return this.request('/api/admin/site-settings', { method: 'PUT', body: JSON.stringify(settings) }); },
+    saveSiteSettings(settings) { return this.request('/admin/site-settings', { method: 'PUT', body: JSON.stringify(settings) }); },
     answer(surveyId, questionId, answerIndex) { return this.post('/answers', { surveyId, questionId, answerIndex }); },
     unlock(surveyId) { return this.post(`/surveys/${surveyId}/unlock`); },
     withdraw(name, phone, amount) { return this.post('/withdrawals', { name, phone, amount }); },
