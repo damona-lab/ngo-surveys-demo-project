@@ -13,10 +13,11 @@ export default function AdminLogin() {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const user = await login(email, password);
-      if (user.role !== 'admin') { await logout(); setError('This account does not have administrator access.'); return; }
-      window.location.href = '/admin';
-    } catch (err) { setError(err.message); }
-    finally { setBusy(false); }
+      if (user.role !== 'admin') { await logout(); setError('This account does not have administrator access.'); setBusy(false); return; }
+      // Admin session is established in the auth context, so App re-renders the
+      // admin dashboard at /admin immediately without a full page reload.
+      return;
+    } catch (err) { setError(err.message); setBusy(false); }
   };
   return <main className="admin-login-wrap"><form className="admin-login" onSubmit={submit}>
     <div className="admin-mark"><ShieldCheck size={23} /></div>
