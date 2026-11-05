@@ -12,7 +12,12 @@ const API = (base => {
       if (text) {
         try { data = JSON.parse(text); } catch { data = null; }
       }
-      if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
+      if (!res.ok) {
+        const msg = (data && data.error) || (res.status === 401 ? 'Please sign in.' : res.status === 403 ? 'You do not have permission to do that.' : `Request failed (${res.status})`);
+        const err = new Error(msg);
+        err.status = res.status;
+        throw err;
+      }
       return data;
     },
     get(path) { return this.request(path); },

@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
     return res.user;
   }
   async function logout() {
-    await API.logout();
+    try { await API.logout(); } catch {}
     setUser(null);
     setState({ balance: 0, totalEarned: 0, surveys: {}, withdrawals: [] });
   }

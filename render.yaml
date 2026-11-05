@@ -28,7 +28,7 @@ services:
       - key: CROSS_SITE_COOKIES
         value: "false"
       # Render serves the prebuilt frontend from dist/ and the API from the same origin, so
-      # Same-origin Render deployment: frontend and API share this service.
+      # the build-time base URL stays empty for a same-origin Render deployment.
       - key: VITE_API_BASE_URL
         value: ""
       - key: NODE_VERSION

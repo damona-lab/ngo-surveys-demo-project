@@ -28,7 +28,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
   }
@@ -84,14 +84,14 @@ app.post('/api/auth/signup', async (req, res, next) => {
     const email = String(body.email || '').trim().toLowerCase();
     const phone = String(body.phone || '').replace(/\s/g, '');
     const password = String(body.password || '');
-    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 8 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 8â€“72 characters.' });
+    if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !/^(?:07|01)\d{8}$/.test(phone) || password.length < 8 || password.length > 72) return res.status(400).json({ error: 'Enter a valid name, email, phone, and a password of 8-72 characters.' });
     const user = await User.create({ name, email, phone, password_hash: await hashPassword(password), balance: 0, total_earned: 0, status: 'active' });
     setSession(res, user);
     await logActivity('account.created', user, { name });
     res.status(201).json({ user: publicUser(user) });
   } catch (err) {
     if (isDuplicateKeyError(err)) return res.status(409).json({ error: 'An account with this email already exists.' });
-    if (isValidationError(err)) return res.status(400).json({ error: 'Enter a valid name and email, and a password of 8â€“72 characters.' });
+    if (isValidationError(err)) return res.status(400).json({ error: 'Enter a valid name and email, and a password of 8-72 characters.' });
     next(err);
   }
 });
