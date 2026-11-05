@@ -293,3 +293,21 @@ html, body { overflow-x:hidden; }
 
 .tier-badge.elite { background:#743a2d;color:#ffd0bd; }
 .survey-card.elite { background:#342522; }
+.admin-inline-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px;padding:18px 20px;border:1px solid #ffffff1a;border-radius:14px;background:linear-gradient(140deg,#124842,#0d3835)}
+.admin-inline-toolbar h2{margin:6px 0 4px;font-size:22px;letter-spacing:-.03em}.admin-inline-toolbar p{margin:0;color:#b4cec8;font-size:13px}
+.admin-inline-form{margin:0 0 22px;padding:20px;border:1px solid #ffffff1a;border-radius:14px;background:#0d3734;color:#e8f3f1}
+.admin-inline-form-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.admin-inline-form-head h3{margin:0;font-size:18px}
+.admin-inline-form form{display:grid;gap:12px}.admin-inline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.admin-inline-form label{display:grid;gap:6px;color:#bfe0d8;font-size:12px;font-weight:700}
+.admin-inline-form input,.admin-inline-form select,.admin-inline-form textarea{width:100%;border:1px solid #ffffff22;border-radius:9px;padding:10px 11px;background:#082725;color:#e8f3f1;font:inherit;font-size:13px}
+.admin-inline-form input:focus,.admin-inline-form select:focus,.admin-inline-form textarea:focus{outline:2px solid #16a58f55;border-color:#16a58f}
+.admin-inline-question{margin:0;padding:14px;border:1px solid #ffffff18;border-radius:10px;display:grid;gap:10px}
+.admin-inline-question legend{padding:0 5px;color:#bfe0d8;font-size:12px;font-weight:800}.admin-inline-question textarea{min-height:88px;resize:vertical}.admin-inline-question label small{font-weight:500;color:#9bb9b4}
+.admin-inline-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.survey-manage-wrap{display:grid;gap:8px}.survey-manage-wrap.is-archived .survey-card{opacity:.72;outline:1px dashed #f59e0b66}
+.survey-admin-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.survey-admin-actions button{display:inline-flex;align-items:center;gap:5px;border:1px solid #ffffff22;border-radius:8px;padding:6px 9px;background:#0d3734;color:#d7efea;font-size:11px;font-weight:700}
+.survey-admin-actions button:hover{border-color:#16a58f;color:#fff}.survey-admin-actions button.danger{color:#ffcbc5}.survey-admin-actions button.danger:hover{border-color:#e25555}
+.archived-pill{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:4px 8px;background:#f59e0b22;color:#ffd479;font-size:10px;font-weight:800}
+.icon-close.small{position:static;width:32px;height:32px}.danger-text{color:#ffcbc5!important}
+@media(max-width:600px){.admin-inline-toolbar,.admin-inline-grid{grid-template-columns:1fr;flex-direction:column;align-items:stretch}}
