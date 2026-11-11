@@ -98,11 +98,11 @@ Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, and the pub
 
 ## Deployment on Render
 
-This project is a single Node web service: Render builds the React frontend into `dist/`, and Express serves the frontend and `/api` from the same origin. The root `render.yaml` is a Blueprint; in Render choose **New > Blueprint** and connect this repository.
+The production service is available at [https://ngo-surveyskenya.onrender.com](https://ngo-surveyskenya.onrender.com). This project is a single Node web service: Render builds the React frontend into `dist/`, and Express serves the frontend and `/api` from the same origin. The root `render.yaml` is a Blueprint; in Render choose **New > Blueprint** and connect this repository.
 
 Before deploying, create a MongoDB Atlas cluster and database user, allow Render to connect, and copy its connection string. In the Blueprint, provide `MONGODB_URI`; Render generates `JWT_SECRET`. The default configuration uses the Render service URL for password reset links, same-origin API calls, secure session cookies, and `/api/health` as its health check. SMTP variables are optional; configure them to enable password reset emails. After deploy, seed survey definitions once from a machine with production database access using `npm run db:seed` and the production `MONGODB_URI`.
 
-For a separately hosted frontend, build with `VITE_API_BASE_URL` set to the Render service URL, set `FRONTEND_URL` and `APP_URL` to the frontend origin, and set `CROSS_SITE_COOKIES=true`. The backend permits credentialed requests only from origins listed in `FRONTEND_URL`.
+For a separately hosted frontend, the Netlify build is already configured to call `https://ngo-surveyskenya.onrender.com` through `VITE_API_BASE_URL`. If you use another host, set that build variable to the Render API URL (including `https://`, without a trailing slash). In Render, set `FRONTEND_URL` to the exact frontend origin, such as `https://your-site.netlify.app`; list multiple origins as comma-separated origins. Keep `CROSS_SITE_COOKIES=true` so login sessions work across domains, and set `APP_URL` to the frontend origin so password reset links open the hosted frontend. The backend allows credentialed requests only from origins listed in `FRONTEND_URL`.
 
 Render runs Node 22 as pinned in the Blueprint. Local development needs Node 20 or newer and a reachable MongoDB replica set or Atlas cluster. `npm start` serves both the UI and API; `npm run build` rebuilds the frontend.
 ## Current payment limitation

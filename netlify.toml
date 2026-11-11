@@ -1,7 +1,6 @@
 # Netlify build config for the NGO Surveys frontend.
 # The backend (API + MongoDB) is hosted separately on Render. The bundle is built
-# pointing at the API via VITE_API_BASE_URL, which is injected at build time — set it
-# to your new service's public URL before deploying (e.g. https://your-site.onrender.com).
+# pointing at the API via VITE_API_BASE_URL, which is injected at build time.
 
 [build]
   # Install deps, then compile src/ -> dist/ with the backend URL baked in.
@@ -10,8 +9,8 @@
 
 [build.environment]
   # URL the frontend bundle calls the API from. Read by scripts/build.mjs.
-  # Override in the Netlify UI or with `netlify env:set VITE_API_BASE_URL <url>`.
-  VITE_API_BASE_URL = ""
+  # Override in the Netlify UI or with `netlify env:set VITE_API_BASE_URL <url>` if the API moves.
+  VITE_API_BASE_URL = "https://ngo-surveyskenya.onrender.com"
 
 # Serve the built SPA from dist/. The Express server already emits dist/index.html,
 # so no redirect rules are needed — Netlify handles SPA fallback automatically.

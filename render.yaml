@@ -18,15 +18,15 @@ services:
         value: ngo_surveys
       - key: DB_SSL
         value: "true"
-      # Leave blank on Render to use RENDER_EXTERNAL_URL. Set this only for a custom frontend URL.
+      # Use the frontend origin here when frontend hosting is separate.
       - key: APP_URL
-        value: ""
-      # Optional allowed origins when using a separately hosted frontend.
+        value: "https://ngo-surveyskenya.onrender.com"
+      # Set to the exact frontend origin(s), comma-separated, e.g. https://your-site.netlify.app.
       - key: FRONTEND_URL
         value: ""
-      # Same-origin hosting uses a strict secure session cookie.
+      # Required for session cookies when the frontend is hosted on another domain.
       - key: CROSS_SITE_COOKIES
-        value: "false"
+        value: "true"
       # Render serves the prebuilt frontend from dist/ and the API from the same origin, so
       # the build-time base URL stays empty for a same-origin Render deployment.
       - key: VITE_API_BASE_URL
